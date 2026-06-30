@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MakineHesap · Makine Elemanları Hesaplama</title>
+<meta name="description" content="Makine elemanları ve mekanizmalar için kolay ve şık hesaplama uygulaması." />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#2563eb" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="MakineHesap" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="icon" type="image/png" href="icon-192.png" />
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-soft: #1e293b;
+    --card: #ffffff;
+    --surface: #f1f5f9;
+    --surface-2: #e2e8f0;
+    --text: #0f172a;
+    --text-soft: #475569;
+    --muted: #94a3b8;
+    --primary: #2563eb;
+    --primary-soft: #dbeafe;
+    --accent: #0ea5e9;
+    --success: #16a34a;
+    --success-soft: #dcfce7;
+    --border: #e2e8f0;
+    --shadow: 0 1px 3px rgba(15,23,42,.08), 0 10px 30px rgba(15,23,42,.06);
+    --radius: 16px;
+    --font: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  }
+  [data-theme="dark"] {
+    --card: #1e293b;
+    --surface: #0f172a;
+    --surface-2: #334155;
+    --text: #f1f5f9;
+    --text-soft: #cbd5e1;
+    --muted: #64748b;
+    --primary-soft: #1e3a8a;
+    --border: #334155;
+    --shadow: 0 1px 3px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background:
+      radial-gradient(1200px 600px at 110% -10%, rgba(37,99,235,.12), transparent 60%),
+      radial-gradient(1000px 500px at -10% 110%, rgba(14,165,233,.10), transparent 55%),
+      var(--surface);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background .3s;
+  }
+
+  /* ---------- Layout ---------- */
+  .app { display: grid; grid-template-columns: 270px 1fr; min-height: 100vh; }
+  .sidebar {
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    padding: 22px 16px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; padding: 0 6px; }
+  .brand .logo {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: grid; place-items: center; color: #fff; font-size: 22px;
+    box-shadow: 0 6px 16px rgba(37,99,235,.35);
+  }
+  .brand h1 { font-size: 18px; line-height: 1.1; }
+  .brand small { color: var(--muted); font-size: 11px; font-weight: 500; }
+
+  .nav-group { margin-bottom: 18px; }
+  .nav-group h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin: 0 8px 8px; font-weight: 700;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; border-radius: 11px; cursor: pointer;
+    color: var(--text-soft); font-size: 14.5px; font-weight: 500;
+    transition: background .15s, color .15s; user-select: none;
+  }
+  .nav-item:hover { background: var(--surface); color: var(--text); }
+  .nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 6px 14px rgba(37,99,235,.3); }
+  .nav-item .ico { font-size: 18px; width: 22px; text-align: center; }
+
+  .main { padding: 30px 38px 70px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; gap: 16px; flex-wrap: wrap; }
+  .topbar .crumb { color: var(--muted); font-size: 13px; }
+  .topbar .crumb b { color: var(--text); }
+  .theme-btn {
+    border: 1px solid var(--border); background: var(--card); color: var(--text);
+    padding: 9px 14px; border-radius: 11px; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; gap: 8px; font-weight: 600;
+  }
+  .theme-btn:hover { border-color: var(--primary); }
+
+  /* ---------- Home ---------- */
+  .hero {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff; border-radius: var(--radius); padding: 34px 38px; margin-bottom: 28px;
+    box-shadow: 0 16px 40px rgba(37,99,235,.30);
+  }
+  .hero h2 { font-size: 28px; margin-bottom: 8px; }
+  .hero p { opacity: .92; font-size: 15px; max-width: 640px; line-height: 1.5; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+  .tile {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px; cursor: pointer; box-shadow: var(--shadow);
+    transition: transform .15s, border-color .15s;
+  }
+  .tile:hover { transform: translateY(-4px); border-color: var(--primary); }
+  .tile .ico { font-size: 30px; margin-bottom: 12px; display: block; }
+  .tile h3 { font-size: 16.5px; margin-bottom: 6px; }
+  .tile p { color: var(--text-soft); font-size: 13px; line-height: 1.45; }
+
+  /* ---------- Calculator ---------- */
+  .calc-head { margin-bottom: 22px; }
+  .calc-head h2 { font-size: 24px; display: flex; align-items: center; gap: 12px; }
+  .calc-head .ico { font-size: 28px; }
+  .calc-head p { color: var(--text-soft); margin-top: 6px; font-size: 14px; max-width: 720px; line-height: 1.5; }
+
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; box-shadow: var(--shadow);
+  }
+  .card h3 { font-size: 15px; margin-bottom: 18px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: var(--text-soft); margin-bottom: 6px; font-weight: 600; }
+  .field .hint { color: var(--muted); font-weight: 400; }
+  .input-wrap { position: relative; display: flex; align-items: center; }
+  .field input, .field select {
+    width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 11px;
+    background: var(--surface); color: var(--text); font-size: 15px; font-family: var(--font);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .field .unit {
+    position: absolute; right: 12px; color: var(--muted); font-size: 13px; font-weight: 600; pointer-events: none;
+  }
+  .field input { padding-right: 48px; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 8px; }
+  .btn {
+    flex: 1; padding: 12px; border: none; border-radius: 12px; cursor: pointer;
+    font-size: 15px; font-weight: 700; font-family: var(--font); transition: transform .1s, filter .15s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; box-shadow: 0 8px 18px rgba(37,99,235,.3); }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .btn-ghost { background: var(--surface); color: var(--text-soft); flex: 0 0 auto; padding: 12px 16px; }
+  .btn-ghost:hover { background: var(--surface-2); }
+
+  /* ---------- Results ---------- */
+  .results .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 10px; line-height: 1.6; }
+  .result-row {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 14px 0; border-bottom: 1px dashed var(--border);
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .r-label { font-size: 14px; color: var(--text-soft); }
+  .result-row .r-label small { display: block; color: var(--muted); font-size: 11.5px; font-family: ui-monospace, monospace; margin-top: 3px; }
+  .result-row .r-val { font-size: 19px; font-weight: 800; color: var(--text); white-space: nowrap; }
+  .result-row .r-val span { font-size: 13px; color: var(--muted); font-weight: 600; margin-left: 3px; }
+  .result-row.highlight { background: var(--success-soft); margin: 0 -12px; padding: 14px 12px; border-radius: 11px; border: none; }
+  [data-theme="dark"] .result-row.highlight { background: rgba(22,163,74,.15); }
+  .result-row.highlight .r-val { color: var(--success); }
+
+  .formula-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; margin-top: 18px; font-family: ui-monospace, 'Cascadia Code', monospace;
+    font-size: 13px; color: var(--text-soft); line-height: 1.9; overflow-x: auto;
+  }
+  .formula-box .ftitle { font-family: var(--font); font-weight: 700; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  .err { background: #fef2f2; color: #b91c1c; padding: 12px 14px; border-radius: 11px; font-size: 13.5px; border: 1px solid #fecaca; }
+  [data-theme="dark"] .err { background: rgba(185,28,28,.15); border-color: rgba(185,28,28,.4); color: #fca5a5; }
+
+  /* ---------- Kumpas (caliper) ---------- */
+  .k-wrap { display: grid; grid-template-columns: 1fr; gap: 18px; }
+  .k-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .k-seg { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 4px; gap: 4px; }
+  .k-seg button { border: none; background: transparent; color: var(--text-soft); padding: 8px 13px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13.5px; font-family: var(--font); }
+  .k-seg button.on { background: var(--primary); color: #fff; box-shadow: 0 4px 10px rgba(37,99,235,.3); }
+  .k-readout { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .k-readout .big { font-size: 40px; font-weight: 800; font-family: ui-monospace, monospace; color: var(--primary); letter-spacing: .5px; }
+  .k-readout .big.hidden { color: var(--muted); }
+  .k-readout .lbl { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .k-svg-box { width: 100%; overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px; touch-action: none; }
+  .k-svg-box svg { width: 100%; min-width: 640px; height: auto; display: block; user-select: none; }
+  .k-range { width: 100%; accent-color: var(--primary); height: 26px; }
+  .k-break { font-family: ui-monospace, monospace; font-size: 13.5px; color: var(--text-soft); line-height: 1.8; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .k-break b { color: var(--text); }
+  .k-answer { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .k-answer input { width: 150px; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 11px; background: var(--surface); color: var(--text); font-size: 16px; font-family: var(--font); }
+  .k-answer input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .k-feedback { font-weight: 700; font-size: 15px; padding: 6px 0; }
+  .k-feedback.ok { color: var(--success); }
+  .k-feedback.no { color: #dc2626; }
+  .k-hint { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; display: none; }
+    .sidebar.open { display: block; }
+    .main { padding: 20px; }
+    .panels { grid-template-columns: 1fr; }
+    .menu-toggle { display: flex !important; }
+  }
+  .menu-toggle { display: none; }
+
+  /* ---------- Giriş (intro) ekranı ---------- */
+  .intro {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    background: #0b1220; overflow: hidden;
+    transition: opacity .6s ease, visibility .6s ease;
+  }
+  .intro.hide { opacity: 0; visibility: hidden; }
+  .intro-bg {
+    position: absolute; inset: -20%;
+    background:
+      radial-gradient(600px 400px at 20% 20%, rgba(37,99,235,.45), transparent 60%),
+      radial-gradient(600px 400px at 85% 75%, rgba(14,165,233,.40), transparent 60%),
+      radial-gradient(500px 500px at 60% 30%, rgba(99,102,241,.25), transparent 60%);
+    animation: introFloat 12s ease-in-out infinite alternate;
+  }
+  @keyframes introFloat { from { transform: translate(-10px,-10px) scale(1); } to { transform: translate(20px,15px) scale(1.08); } }
+  .intro-card {
+    position: relative; text-align: center; color: #fff; max-width: 440px;
+    animation: introUp .7s cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes introUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .intro-logo {
+    width: 92px; height: 92px; margin: 0 auto 18px; border-radius: 24px;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9); display: grid; place-items: center;
+    font-size: 48px; box-shadow: 0 20px 50px rgba(37,99,235,.5);
+    animation: introPop .8s .1s both, introSpin 9s 1s ease-in-out infinite;
+  }
+  @keyframes introPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes introSpin { 0%,80%,100% { transform: rotate(0); } 88% { transform: rotate(40deg); } }
+  .intro-title { font-size: 40px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 10px; }
+  .intro-tag { font-size: 15.5px; line-height: 1.6; color: #cbd5e1; margin-bottom: 22px; }
+  .intro-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 28px; }
+  .intro-chips span { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #e2e8f0; padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+  .intro-btn {
+    border: none; cursor: pointer; font-family: var(--font); font-weight: 800; font-size: 17px; color: #fff;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9); padding: 15px 40px; border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(37,99,235,.5); transition: transform .15s, filter .15s;
+  }
+  .intro-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  .intro-btn:active { transform: scale(.97); }
+  .intro-site {
+    display: inline-block; margin-top: 26px; color: #93c5fd; text-decoration: none;
+    font-size: 15px; font-weight: 700; letter-spacing: .3px; border-bottom: 1px dashed rgba(147,197,253,.5); padding-bottom: 2px;
+  }
+  .intro-site:hover { color: #fff; }
+
+  /* ---------- Sidebar footer ---------- */
+  .side-foot { margin-top: 22px; padding: 14px 10px 4px; border-top: 1px solid var(--border); text-align: center; }
+  .side-foot a { color: var(--primary); text-decoration: none; font-weight: 700; font-size: 13.5px; }
+  .side-foot a:hover { text-decoration: underline; }
+  .side-foot small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ===== Giriş (Intro) ekranı ===== -->
+<div id="intro" class="intro">
+  <div class="intro-bg"></div>
+  <div class="intro-card">
+    <div class="intro-logo">⚙️</div>
+    <h1 class="intro-title">MakineHesap</h1>
+    <p class="intro-tag">Makine Elemanları &amp; Mekanizmalar<br>Hesaplama · Simülasyon · Ölçme</p>
+    <div class="intro-chips">
+      <span>🛞 Güç İletimi</span>
+      <span>🔩 Bağlama</span>
+      <span>📏 Kumpas</span>
+      <span>🛗 Asansör</span>
+    </div>
+    <button class="intro-btn" onclick="enterApp()">Giriş Yap →</button>
+    <a class="intro-site" href="https://gdntsrm.com" target="_blank" rel="noopener">🌐 gdntsrm.com</a>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">⚙️</div>
+      <div>
+        <h1>MakineHesap</h1>
+        <small>Makine Elemanları & Mekanizmalar</small>
+      </div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="side-foot">
+      <a href="https://gdntsrm.com" target="_blank" rel="noopener">🌐 gdntsrm.com</a>
+      <small>MakineHesap © 2026</small>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb">📍 <b id="crumb">Ana Sayfa</b></div>
+      <div style="display:flex; gap:10px;">
+        <button class="theme-btn menu-toggle" onclick="toggleMenu()">☰ Menü</button>
+        <button class="theme-btn" id="installBtn" style="display:none; background:var(--primary); color:#fff; border-color:var(--primary);" onclick="installApp()">📲 Uygulamayı Yükle</button>
+        <button class="theme-btn" onclick="toggleTheme()"><span id="themeIcon">🌙</span> <span id="themeTxt">Karanlık</span></button>
+      </div>
+    </div>
+    <div id="content"></div>
+  </main>
+</div>
+
+<script>
+/* =========================================================================
+   MakineHesap — Makine Elemanları & Mekanizmalar Hesaplama Uygulaması
+   Yeni hesap eklemek için: aşağıdaki CALCS nesnesine yeni bir kayıt ekle.
+   ========================================================================= */
+
+const PI = Math.PI;
+const fmt = (x, d = 2) => {
+  if (x === null || x === undefined || Number.isNaN(x)) return '—';
+  return Number(x).toLocaleString('tr-TR', { maximumFractionDigits: d, minimumFractionDigits: 0 });
+};
+
+/* ---- Hesaplayıcı tanımları ---- */
+const CALCS = {
+
+  kayis: {
+    ico: '🛞', cat: 'Güç İletimi',
+    title: 'Kayış–Kasnak Mekanizması',
+    desc: 'Döndüren kasnağın devrinden hareketle döndürülen kasnağın devrini, kayış hızını, iletim oranını ve kayış uzunluğunu hesaplar.',
+    inputs: [
+      { id: 'n1',  label: 'Döndüren kasnak devri', sub: 'n₁', unit: 'd/dak', def: 1600 },
+      { id: 'dm1', label: 'Döndüren kasnak çapı',   sub: 'dm₁', unit: 'mm', def: 123.8 },
+      { id: 'dm2', label: 'Döndürülen kasnak çapı', sub: 'dm₂', unit: 'mm', def: 198.8 },
+      { id: 'a',   label: 'Eksenler arası mesafe',  sub: 'a', unit: 'mm', def: 750 },
+    ],
+    compute: (v) => {
+      const n2 = v.n1 * v.dm1 / v.dm2;
+      const i  = v.dm2 / v.dm1;
+      const V  = (PI * v.dm1 * v.n1) / (1000 * 60);
+      const Lm = 2*v.a + 1.57*(v.dm1+v.dm2) + Math.pow(v.dm2-v.dm1,2)/(4*v.a);
+      return {
+        rows: [
+          { label: 'Döndürülen kasnak devri', sub: 'n₂ = n₁·dm₁/dm₂', val: fmt(n2), unit: 'd/dak', hi: true },
+          { label: 'İletim oranı',             sub: 'i = dm₂/dm₁', val: fmt(i,3), unit: '' },
+          { label: 'Kayış hızı',               sub: 'V = π·dm₁·n₁/(1000·60)', val: fmt(V), unit: 'm/s', hi: true },
+          { label: 'Kayış uzunluğu',           sub: 'Lm', val: fmt(Lm), unit: 'mm', hi: true },
+        ],
+        formula: [
+          'n₂ = n₁ · dm₁ / dm₂',
+          'V  = π · dm₁ · n₁ / (1000 · 60)   [m/s]',
+          'Lm = 2·a + 1.57·(dm₁+dm₂) + (dm₂−dm₁)² / (4·a)',
+        ]
+      };
+    }
+  },
+
+  disli: {
+    ico: '⚙️', cat: 'Güç İletimi',
+    title: 'Silindirik Düz Dişli Çark',
+    desc: 'Modül ve diş sayısından dişli çarkın taksimat, diş üstü ve diş dibi çapını hesaplar. İstersen karşılık dişlisini de girerek eksenler arası mesafe ve iletim oranını bulabilirsin.',
+    inputs: [
+      { id: 'm',  label: 'Modül', sub: 'm', unit: 'mm', def: 3 },
+      { id: 'z1', label: 'Diş sayısı', sub: 'z₁', unit: 'adet', def: 20 },
+      { id: 'z2', label: 'Karşılık diş sayısı (isteğe bağlı)', sub: 'z₂', unit: 'adet', def: '' },
+      { id: 'a',  label: 'Eksenler arası mesafe (isteğe bağlı)', sub: 'a (z₂ boşsa buradan z₂ bulunur)', unit: 'mm', def: '' },
+    ],
+    compute: (v) => {
+      const m = v.m, z1 = v.z1;
+      const d01 = m * z1;                          // taksimat çapı
+      const da1 = d01 + 2 * m;                      // diş üstü çapı
+      const df1 = d01 - 2.5 * m;                    // diş dibi çapı
+      const t   = PI * m;                           // taksimat (hatve)
+      const h   = 2.25 * m;                         // diş yüksekliği
+      const rows = [
+        { label: 'Taksimat çapı', sub: 'd₀ = m · z', val: fmt(d01), unit: 'mm' },
+        { label: 'Diş üstü çapı', sub: 'da = d₀ + 2·m', val: fmt(da1), unit: 'mm', hi: true },
+        { label: 'Diş dibi çapı', sub: 'df = d₀ − 2.5·m', val: fmt(df1), unit: 'mm', hi: true },
+        { label: 'Diş yüksekliği', sub: 'h = 2.25·m', val: fmt(h), unit: 'mm' },
+        { label: 'Taksimat (hatve)', sub: 't = π·m', val: fmt(t), unit: 'mm' },
+      ];
+      const hasZ2 = (typeof v.z2 === 'number') && v.z2 > 0;
+      const hasA  = (typeof v.a  === 'number') && v.a  > 0;
+      if (hasZ2 || hasA) {
+        let z2, fromA = false;
+        if (hasZ2) { z2 = v.z2; } else { z2 = (2 * v.a - d01) / m; fromA = true; }
+        const d02 = m * z2;
+        const a   = (d01 + d02) / 2;
+        const i   = z2 / z1;
+        rows.push({ label: 'Karşılık diş sayısı', sub: fromA ? 'z₂ = (2a − d₀₁)/m' : 'verildi', val: fmt(z2, 2), unit: 'adet', hi: fromA });
+        rows.push({ label: 'Karşılık taksimat çapı', sub: 'd₀₂ = m·z₂', val: fmt(d02), unit: 'mm' });
+        rows.push({ label: 'Eksenler arası mesafe', sub: 'a = (d₀₁+d₀₂)/2', val: fmt(a), unit: 'mm', hi: !fromA });
+        rows.push({ label: 'İletim oranı', sub: 'i = z₂/z₁', val: fmt(i, 3), unit: '' });
+      }
+      return {
+        rows,
+        formula: [
+          'd₀ = m · z              (taksimat dairesi çapı)',
+          'da = d₀ + 2·m           (diş üstü çapı)',
+          'df = d₀ − 2.5·m         (diş dibi çapı)',
+          'h = 2.25·m   ·   t = π·m   ·   a = (d₀₁+d₀₂)/2',
+        ]
+      };
+    }
+  },
+
+  zincir: {
+    ico: '🔗', cat: 'Güç İletimi',
+    title: 'Zincir Dişli Çark',
+    desc: 'Zincir adımı, makara çapı ve diş sayısından zincir dişli çark elemanlarını hesaplar. Çok sıralı zincirler için sıra genişliklerini de verir.',
+    inputs: [
+      { id: 'p',  label: 'Zincir adımı', sub: 'p', unit: 'mm', def: 9.525 },
+      { id: 'z',  label: 'Diş sayısı', sub: 'z', unit: 'adet', def: 20 },
+      { id: 'd1', label: 'Makara çapı', sub: 'd₁', unit: 'mm', def: 6.35 },
+      { id: 'b1', label: 'Zincir ara genişliği', sub: 'b₁', unit: 'mm', def: 5.72 },
+      { id: 'e',  label: 'Sıralar arası mesafe', sub: 'e (tek sıra için 0)', unit: 'mm', def: 10.1 },
+    ],
+    compute: (v) => {
+      const ang = PI / v.z;          // 180/z radyan
+      const d0  = v.p / Math.sin(ang);
+      const da  = d0 * Math.cos(ang) + 0.8 * v.d1;
+      const df  = d0 - v.d1;
+      const B1  = 0.91 * v.b1;
+      const B2  = B1 + v.e;
+      const B3  = B2 + v.e;
+      const rows = [
+        { label: 'Taksimat çapı', sub: 'd₀ = p / sin(180/z)', val: fmt(d0), unit: 'mm', hi: true },
+        { label: 'Diş üstü çapı', sub: 'da = d₀·cos(180/z) + 0.8·d₁', val: fmt(da), unit: 'mm', hi: true },
+        { label: 'Diş dibi çapı', sub: 'df = d₀ − d₁', val: fmt(df), unit: 'mm', hi: true },
+        { label: 'Sıra genişliği B₁', sub: 'B₁ = 0.91·b₁', val: fmt(B1), unit: 'mm' },
+      ];
+      if (v.e > 0) {
+        rows.push({ label: 'Sıra genişliği B₂', sub: 'B₂ = B₁ + e', val: fmt(B2), unit: 'mm' });
+        rows.push({ label: 'Sıra genişliği B₃', sub: 'B₃ = B₂ + e', val: fmt(B3), unit: 'mm' });
+      }
+      return {
+        rows,
+        formula: [
+          'd₀ = p / sin(180°/z)',
+          'da = d₀ · cos(180°/z) + 0.8·d₁',
+          'df = d₀ − d₁',
+          'B₁ = 0.91·b₁  ·  B₂ = B₁+e  ·  B₃ = B₂+e',
+        ]
+      };
+    }
+  },
+
+  yay: {
+    ico: '🌀', cat: 'Makine Elemanları',
+    title: 'Helisel Yay (Basma / Çekme)',
+    desc: 'Ortalama helis çapı, tel çapı ve helis sayısından yay boyu, tel boyu ve çaplarını hesaplar (DIN 29).',
+    inputs: [
+      { id: 'dm', label: 'Ortalama helis çapı', sub: 'dm', unit: 'mm', def: 30 },
+      { id: 'd',  label: 'Tel çapı', sub: 'd', unit: 'mm', def: 4 },
+      { id: 'z',  label: 'Helis (sarım) sayısı', sub: 'z', unit: 'adet', def: 8 },
+      { id: 't',  label: 'Adım', sub: 't', unit: 'mm', def: 10 },
+    ],
+    compute: (v) => {
+      const L   = v.t * v.z;                 // yay boyu
+      const L0  = v.dm * PI * (v.z + 2);      // tel boyu
+      const di  = v.dm - v.d;                 // iç çap
+      const da  = v.dm + v.d;                 // dış çap
+      const dw  = 0.85 * di;                  // malafa çapı (0.8–0.9·di ort.)
+      return {
+        rows: [
+          { label: 'Yay boyu', sub: 'L = t·z', val: fmt(L), unit: 'mm', hi: true },
+          { label: 'Tel boyu', sub: 'L₀ = dm·π·(z+2)', val: fmt(L0), unit: 'mm', hi: true },
+          { label: 'İç çap', sub: 'di = dm − d', val: fmt(di), unit: 'mm' },
+          { label: 'Dış çap', sub: 'da = dm + d', val: fmt(da), unit: 'mm' },
+          { label: 'Malafa çapı', sub: 'dw ≈ 0.85·di', val: fmt(dw), unit: 'mm' },
+        ],
+        formula: [
+          'L  = t · z              (yay boyu)',
+          'L₀ = dm · π · (z + 2)   (tel boyu)',
+          'di = dm − d   ·   da = dm + d',
+          'dw = 0.8…0.9 · di       (malafa çapı)',
+        ]
+      };
+    }
+  },
+
+  helisel: {
+    ico: '🦷', cat: 'Güç İletimi',
+    title: 'Helisel Dişli Çark',
+    desc: 'Normal modül, diş sayıları ve helis açısından alın modülü, taksimat çapları, eksenler arası mesafe ve iletim oranını hesaplar.',
+    inputs: [
+      { id: 'mn',   label: 'Normal modül', sub: 'mₙ', unit: 'mm', def: 3 },
+      { id: 'z1',   label: 'Pinyon diş sayısı', sub: 'z₁', unit: 'adet', def: 20 },
+      { id: 'z2',   label: 'Karşılık diş sayısı', sub: 'z₂', unit: 'adet', def: 40 },
+      { id: 'beta', label: 'Helis açısı', sub: 'β', unit: '°', def: 15 },
+    ],
+    compute: (v) => {
+      const b   = v.beta * PI / 180;
+      const cb  = Math.cos(b);
+      const mt  = v.mn / cb;                 // alın modülü
+      const d01 = v.mn * v.z1 / cb;
+      const d02 = v.mn * v.z2 / cb;
+      const a   = v.mn * (v.z1 + v.z2) / (2 * cb);
+      const i   = v.z2 / v.z1;
+      const da1 = d01 + 2 * v.mn;            // diş üstü (pinyon)
+      const df1 = d01 - 2.5 * v.mn;          // diş dibi (pinyon)
+      const pn  = PI * v.mn;                 // normal hatve
+      const pt  = PI * mt;                   // alın hatve
+      return {
+        rows: [
+          { label: 'Alın modülü', sub: 'mₜ = mₙ / cos β', val: fmt(mt,3), unit: 'mm', hi: true },
+          { label: 'Taksimat çapı (pinyon)', sub: 'd₀₁ = mₙ·z₁ / cos β', val: fmt(d01), unit: 'mm' },
+          { label: 'Taksimat çapı (karşılık)', sub: 'd₀₂ = mₙ·z₂ / cos β', val: fmt(d02), unit: 'mm' },
+          { label: 'Eksenler arası mesafe', sub: 'a = mₙ·(z₁+z₂) / (2·cos β)', val: fmt(a), unit: 'mm', hi: true },
+          { label: 'İletim oranı', sub: 'i = z₂/z₁', val: fmt(i,3), unit: '' },
+          { label: 'Diş üstü çapı (pinyon)', sub: 'da₁ = d₀₁ + 2mₙ', val: fmt(da1), unit: 'mm' },
+          { label: 'Diş dibi çapı (pinyon)', sub: 'df₁ = d₀₁ − 2.5mₙ', val: fmt(df1), unit: 'mm' },
+          { label: 'Normal hatve', sub: 'pₙ = π·mₙ', val: fmt(pn), unit: 'mm' },
+          { label: 'Alın hatvesi', sub: 'pₜ = π·mₜ', val: fmt(pt), unit: 'mm' },
+        ],
+        formula: [
+          'mₜ = mₙ / cos β            (alın modülü)',
+          'd₀ = mₙ · z / cos β        (taksimat çapı)',
+          'a  = mₙ·(z₁+z₂) / (2·cos β)',
+          'da = d₀ + 2mₙ  ·  df = d₀ − 2.5mₙ',
+        ]
+      };
+    }
+  },
+
+  yatak: {
+    ico: '⭕', cat: 'Makine Elemanları',
+    title: 'Rulman Ömrü (L₁₀)',
+    desc: 'Dinamik yük sayısı (C), eşdeğer yatak yükü (P) ve devirden rulmanın ömrünü milyon devir ve saat olarak hesaplar.',
+    inputs: [
+      { id: 'C', label: 'Dinamik yük sayısı', sub: 'C (katalogdan)', unit: 'N', def: 14700 },
+      { id: 'P', label: 'Eşdeğer yatak yükü', sub: 'P', unit: 'N', def: 3000 },
+      { id: 'n', label: 'Devir sayısı', sub: 'n', unit: 'd/dak', def: 1500 },
+      { id: 'p', label: 'Rulman tipi', sub: 'üs p', type: 'select', def: 3,
+        options: [ { v: 3, t: 'Bilyeli rulman (p = 3)' }, { v: 3.3333, t: 'Makaralı rulman (p = 10/3)' } ] },
+    ],
+    compute: (v) => {
+      const ratio = v.C / v.P;
+      const L10 = Math.pow(ratio, v.p);          // milyon devir
+      const Lh  = (1e6 / (60 * v.n)) * L10;       // saat
+      const Lyil = Lh / (8 * 300);                // ~yıl (8 saat/gün, 300 gün)
+      return {
+        rows: [
+          { label: 'Yük oranı', sub: 'C / P', val: fmt(ratio,2), unit: '' },
+          { label: 'Ömür', sub: 'L₁₀ = (C/P)^p', val: fmt(L10,1), unit: 'milyon devir', hi: true },
+          { label: 'Ömür (saat)', sub: 'Lₕ = 10⁶/(60·n) · L₁₀', val: fmt(Lh,0), unit: 'saat', hi: true },
+          { label: 'Ömür (yıl)', sub: '≈ Lₕ / (8 saat · 300 gün)', val: fmt(Lyil,1), unit: 'yıl' },
+        ],
+        formula: [
+          'L₁₀ = (C / P)^p           [milyon devir]',
+          'p = 3 (bilyeli)  ·  p = 10/3 (makaralı)',
+          'Lₕ = 10⁶ / (60·n) · L₁₀   [saat]',
+          'P = eşdeğer dinamik yük (radyal için P ≈ Fr)',
+        ]
+      };
+    }
+  },
+
+  civata: {
+    ico: '🔩', cat: 'Bağlama Elemanları',
+    title: 'Civata Mukavemeti',
+    desc: 'Eksenel kuvvet altındaki civatanın çekme gerilmesini, gerekli en küçük çapı ve sıkma momentini hesaplar.',
+    inputs: [
+      { id: 'F',    label: 'Eksenel (çekme) kuvveti', sub: 'F', unit: 'N', def: 10000 },
+      { id: 'd',    label: 'Hesap çapı (diş dibi)', sub: 'd', unit: 'mm', def: 12 },
+      { id: 'sem',  label: 'Emniyet gerilmesi', sub: 'σₑₘ', unit: 'N/mm²', def: 80 },
+    ],
+    compute: (v) => {
+      const A     = PI * v.d * v.d / 4;
+      const sigma = v.F / A;                          // çekme gerilmesi
+      const dmin  = Math.sqrt(4 * v.F / (PI * v.sem)); // gerekli en küçük çap
+      const M     = 0.2 * v.F * v.d / 1000;           // sıkma momenti [N·m]
+      const ok    = sigma <= v.sem;
+      return {
+        rows: [
+          { label: 'Hesap kesiti', sub: 'A = π·d²/4', val: fmt(A), unit: 'mm²' },
+          { label: 'Çekme gerilmesi', sub: 'σ = F / A', val: fmt(sigma,1), unit: 'N/mm²', hi: true },
+          { label: 'Durum', sub: 'σ ≤ σₑₘ ?', val: ok ? 'Güvenli ✓' : 'GÜVENSİZ ✗', unit: '', hi: true },
+          { label: 'Gerekli en küçük çap', sub: 'd ≥ √(4F / π·σₑₘ)', val: fmt(dmin,2), unit: 'mm', hi: true },
+          { label: 'Sıkma momenti', sub: 'M ≈ 0.2·F·d', val: fmt(M,1), unit: 'N·m' },
+        ],
+        formula: [
+          'A = π · d² / 4            (hesap kesiti)',
+          'σ = F / A ≤ σₑₘ           (çekme kontrolü)',
+          'd_min = √(4·F / (π·σₑₘ))',
+          'M ≈ 0.2 · F · d           (sıkma momenti)',
+        ]
+      };
+    }
+  },
+
+  kama: {
+    ico: '🗝️', cat: 'Bağlama Elemanları',
+    title: 'Kama Bağlantısı',
+    desc: 'Döndürme momentini ileten kamanın çevresel kuvvetini, kesme ve ezilme gerilmelerini hesaplar.',
+    inputs: [
+      { id: 'Mt', label: 'Döndürme momenti', sub: 'Mt', unit: 'N·mm', def: 120000 },
+      { id: 'd',  label: 'Mil çapı', sub: 'd', unit: 'mm', def: 40 },
+      { id: 'b',  label: 'Kama genişliği', sub: 'b', unit: 'mm', def: 12 },
+      { id: 'h',  label: 'Kama yüksekliği', sub: 'h', unit: 'mm', def: 8 },
+      { id: 'l',  label: 'Kama boyu', sub: 'l', unit: 'mm', def: 56 },
+    ],
+    compute: (v) => {
+      const F     = 2 * v.Mt / v.d;          // çevresel kuvvet
+      const tau   = F / (v.b * v.l);         // kesme gerilmesi
+      const sigez = 2 * F / (v.h * v.l);     // ezilme gerilmesi (yarı yükseklik temas)
+      return {
+        rows: [
+          { label: 'Çevresel kuvvet', sub: 'F = 2·Mt / d', val: fmt(F,0), unit: 'N', hi: true },
+          { label: 'Kesme gerilmesi', sub: 'τ = F / (b·l)', val: fmt(tau,2), unit: 'N/mm²', hi: true },
+          { label: 'Ezilme gerilmesi', sub: 'σₑ = 2F / (h·l)', val: fmt(sigez,2), unit: 'N/mm²', hi: true },
+        ],
+        formula: [
+          'F  = 2 · Mt / d           (çevresel kuvvet)',
+          'τ  = F / (b · l)          (kesme)',
+          'σₑ = 2·F / (h · l)        (ezilme)',
+        ]
+      };
+    }
+  },
+
+  percin: {
+    ico: '📌', cat: 'Bağlama Elemanları',
+    title: 'Perçin Bağlantısı',
+    desc: 'Yük altındaki perçin grubunun kesme ve ezilme gerilmelerini hesaplar (tek kesitli kabul).',
+    inputs: [
+      { id: 'F', label: 'Kuvvet', sub: 'F', unit: 'N', def: 20000 },
+      { id: 'd', label: 'Perçin çapı', sub: 'd', unit: 'mm', def: 10 },
+      { id: 'n', label: 'Perçin sayısı', sub: 'n', unit: 'adet', def: 4 },
+      { id: 't', label: 'Saç kalınlığı', sub: 't', unit: 'mm', def: 6 },
+    ],
+    compute: (v) => {
+      const A     = v.n * PI * v.d * v.d / 4;
+      const tau   = v.F / A;                 // kesme gerilmesi
+      const sigez = v.F / (v.n * v.d * v.t); // ezilme gerilmesi
+      return {
+        rows: [
+          { label: 'Toplam kesme alanı', sub: 'A = n·π·d²/4', val: fmt(A,1), unit: 'mm²' },
+          { label: 'Kesme gerilmesi', sub: 'τ = F / A', val: fmt(tau,2), unit: 'N/mm²', hi: true },
+          { label: 'Ezilme gerilmesi', sub: 'σₑ = F / (n·d·t)', val: fmt(sigez,2), unit: 'N/mm²', hi: true },
+        ],
+        formula: [
+          'A  = n · π · d² / 4       (toplam kesme alanı)',
+          'τ  = F / A                (kesme)',
+          'σₑ = F / (n · d · t)      (ezilme)',
+        ]
+      };
+    }
+  },
+
+  asansor: {
+    ico: '🛗', cat: 'Taşıma Sistemleri',
+    title: 'Asansör Motor Gücü',
+    desc: 'Motor tahrikli redüktörlü asansörde kabin yükü, halat ve karşı ağırlıktan dengelenmemiş kuvveti ve gerekli motor gücünü hesaplar.',
+    inputs: [
+      { id: 'kisi',  label: 'Kapasite (kişi sayısı)', sub: 'n', unit: 'kişi', def: 6 },
+      { id: 'gkisi', label: 'Kişi başına ağırlık', sub: '', unit: 'kg', def: 80 },
+      { id: 'Gk',    label: 'Kabin ağırlığı', sub: 'Gk', unit: 'kg', def: 500 },
+      { id: 'roh',   label: 'Halat birim ağırlığı', sub: 'ρh', unit: 'kg/m', def: 0.51 },
+      { id: 'Lh',    label: 'Halat uzunluğu', sub: 'Lh', unit: 'm', def: 26 },
+      { id: 'nh',    label: 'Halat sayısı', sub: 'nh', unit: 'adet', def: 4 },
+      { id: 'V',     label: 'Kabin hızı', sub: 'V', unit: 'm/s', def: 0.63 },
+      { id: 'eta',   label: 'Verim', sub: 'η', unit: '', def: 0.45 },
+    ],
+    compute: (v) => {
+      const g  = 9.81;
+      const Gy = v.kisi * v.gkisi;            // kabin yükü
+      const Gh = v.roh * v.Lh * v.nh;         // halat ağırlığı
+      const Ga = v.Gk + Gy / 2;               // karşı ağırlık
+      const Fkg = v.Gk + Gy + Gh - Ga;        // dengelenmemiş yük (= Gy/2 + Gh)
+      const Fn  = Fkg * g;                     // kuvvet [N]
+      const P   = Fn * v.V / v.eta;            // güç [W]
+      return {
+        rows: [
+          { label: 'Kabin yükü', sub: 'Gy = n · (kişi ağ.)', val: fmt(Gy, 0), unit: 'kg' },
+          { label: 'Halat ağırlığı', sub: 'Gh = ρh · Lh · nh', val: fmt(Gh, 2), unit: 'kg' },
+          { label: 'Karşı ağırlık', sub: 'Ga = Gk + Gy/2', val: fmt(Ga, 0), unit: 'kg' },
+          { label: 'Dengelenmemiş yük', sub: 'F = Gk + Gy + Gh − Ga', val: fmt(Fkg, 2), unit: 'kg' },
+          { label: 'Kuvvet', sub: 'F = m · g', val: fmt(Fn, 1), unit: 'N', hi: true },
+          { label: 'Motor gücü', sub: 'P = F · V / η', val: fmt(P, 0), unit: 'W', hi: true },
+          { label: 'Motor gücü', sub: '≈', val: fmt(P / 1000, 2), unit: 'kW', hi: true },
+        ],
+        formula: [
+          'Gy = n · (kişi ağırlığı)     ·   Gh = ρh · Lh · nh',
+          'Ga = Gk + Gy/2               (karşı ağırlık)',
+          'F  = (Gk + Gy + Gh − Ga) · g [N]',
+          'P  = F · V / η               [W]',
+        ]
+      };
+    }
+  },
+
+  kumpas: {
+    ico: '📏', cat: 'Ölçme Araçları',
+    title: 'Kumpas Simülasyonu',
+    desc: 'Verniyeli kumpası gerçek gibi kaydır, ölçü değerini oku. Hassasiyetini seç (0.1 / 0.05 / 0.02 mm), serbest dene ya da ölçme alıştırması yap.',
+    custom: true,
+    render: () => kumpasHTML(),
+    init: () => kInit(),
+  },
+
+};
+
+/* =======================  UI MOTORU  ======================= */
+let active = 'home';
+
+function buildNav() {
+  const groups = {};
+  for (const [key, c] of Object.entries(CALCS)) {
+    (groups[c.cat] ||= []).push([key, c]);
+  }
+  let html = `
+    <div class="nav-group">
+      <div class="nav-item ${active==='home'?'active':''}" onclick="go('home')">
+        <span class="ico">🏠</span> Ana Sayfa
+      </div>
+    </div>`;
+  for (const [cat, items] of Object.entries(groups)) {
+    html += `<div class="nav-group"><h2>${cat}</h2>`;
+    for (const [key, c] of items) {
+      html += `<div class="nav-item ${active===key?'active':''}" onclick="go('${key}')">
+        <span class="ico">${c.ico}</span> ${c.title}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  document.getElementById('nav').innerHTML = html;
+}
+
+function renderHome() {
+  document.getElementById('crumb').textContent = 'Ana Sayfa';
+  let tiles = '';
+  for (const [key, c] of Object.entries(CALCS)) {
+    tiles += `<div class="tile" onclick="go('${key}')">
+      <span class="ico">${c.ico}</span>
+      <h3>${c.title}</h3>
+      <p>${c.desc}</p>
+    </div>`;
+  }
+  document.getElementById('content').innerHTML = `
+    <div class="hero">
+      <h2>Makine Elemanları Hesaplama 🛠️</h2>
+      <p>Öğrenciler ve teknik personel için tasarlanmış, kolay ve şık bir hesaplama aracı.
+         Soldaki menüden ya da aşağıdaki kartlardan bir hesap seç, değerleri gir, sonucu adım adım gör.</p>
+    </div>
+    <div class="grid">${tiles}</div>`;
+}
+
+function renderCalc(key) {
+  const c = CALCS[key];
+  document.getElementById('crumb').textContent = c.title;
+  if (c.custom) {
+    document.getElementById('content').innerHTML = `
+      <div class="calc-head">
+        <h2><span class="ico">${c.ico}</span> ${c.title}</h2>
+        <p>${c.desc}</p>
+      </div>${c.render()}`;
+    if (c.init) c.init();
+    return;
+  }
+  let fields = '';
+  for (const inp of c.inputs) {
+    let control;
+    if (inp.type === 'select') {
+      const opts = inp.options.map(o =>
+        `<option value="${o.v}" ${o.v === inp.def ? 'selected' : ''}>${o.t}</option>`).join('');
+      control = `<select id="in_${inp.id}" onchange="calc('${key}')">${opts}</select>`;
+    } else {
+      control = `<input id="in_${inp.id}" type="text" inputmode="decimal" value="${inp.def}" placeholder="0" oninput="calc('${key}')" />
+        <span class="unit">${inp.unit}</span>`;
+    }
+    fields += `<div class="field">
+      <label>${inp.label} <span class="hint">(${inp.sub})</span></label>
+      <div class="input-wrap">${control}</div>
+    </div>`;
+  }
+  document.getElementById('content').innerHTML = `
+    <div class="calc-head">
+      <h2><span class="ico">${c.ico}</span> ${c.title}</h2>
+      <p>${c.desc}</p>
+    </div>
+    <div class="panels">
+      <div class="card">
+        <h3><span class="dot"></span> Girdiler</h3>
+        ${fields}
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="calc('${key}')">⚡ Hesapla</button>
+          <button class="btn btn-ghost" onclick="renderCalc('${key}')">Sıfırla</button>
+        </div>
+      </div>
+      <div class="card results" id="results">
+        <h3><span class="dot"></span> Sonuçlar</h3>
+        <div id="resBody"><div class="empty">Değerleri girip <b>Hesapla</b>’ya bas.<br>Sonuçlar burada görünecek. 👇</div></div>
+      </div>
+    </div>`;
+  calc(key);
+}
+
+function calc(key) {
+  const c = CALCS[key];
+  const v = {};
+  for (const inp of c.inputs) {
+    const raw = document.getElementById('in_' + inp.id).value;
+    v[inp.id] = raw === '' ? '' : parseFloat(String(raw).replace(',', '.'));
+  }
+  const body = document.getElementById('resBody');
+  try {
+    const out = c.compute(v);
+    let html = '';
+    for (const r of out.rows) {
+      html += `<div class="result-row ${r.hi ? 'highlight' : ''}">
+        <div class="r-label">${r.label}<small>${r.sub}</small></div>
+        <div class="r-val">${r.val}<span>${r.unit}</span></div>
+      </div>`;
+    }
+    if (out.formula) {
+      html += `<div class="formula-box"><div class="ftitle">Kullanılan Formüller</div>${out.formula.join('<br>')}</div>`;
+    }
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = `<div class="err">⚠️ Hesaplama yapılamadı. Lütfen tüm değerleri kontrol et.</div>`;
+  }
+}
+
+function go(key) {
+  active = key;
+  buildNav();
+  if (key === 'home') renderHome(); else renderCalc(key);
+  document.getElementById('sidebar').classList.remove('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleTheme() {
+  const b = document.body;
+  const dark = b.getAttribute('data-theme') === 'dark';
+  b.setAttribute('data-theme', dark ? 'light' : 'dark');
+  document.getElementById('themeIcon').textContent = dark ? '🌙' : '☀️';
+  document.getElementById('themeTxt').textContent = dark ? 'Karanlık' : 'Aydınlık';
+}
+function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+
+function enterApp() {
+  document.getElementById('intro').classList.add('hide');
+  try { localStorage.setItem('mh_seen', '1'); } catch (_) {}
+}
+
+/* =======================  KUMPAS SİMÜLASYONU  ======================= */
+let kStep = 0.05;        // hassasiyet (mm)
+let kL = 24.55;          // ölçülen uzunluk (mm)
+let kMode = 'free';      // 'free' | 'practice'
+let kRevealed = true;    // alıştırmada cevap açıldı mı
+let kDrag = false, kDownOffset = 0;
+const kOX = 70, kPX = 5, kYM = 120;   // origin x, px/mm, ana cetvel y
+
+function kCfg() {
+  if (kStep === 0.1)  return { N: 10, span: 9 };
+  if (kStep === 0.02) return { N: 50, span: 49 };
+  return { N: 20, span: 19 };           // 0.05
+}
+const kMaxMM = Math.floor((960 - kOX) / kPX);
+function kMaxL() { return kMaxMM - kCfg().span - 2; }
+function kDec() { return kStep === 0.1 ? 1 : 2; }
+function kFmt(x) { return x.toFixed(kDec()).replace('.', ','); }
+function kSnap(v) { return parseFloat((Math.round(v / kStep) * kStep).toFixed(4)); }
+function kClamp(v) { return Math.max(0, Math.min(kMaxL(), v)); }
+
+function kReading() {
+  const main = Math.floor(kL + 1e-7);
+  const frac = kL - main;
+  const jAlign = Math.round(frac / kStep);
+  const vern = parseFloat((jAlign * kStep).toFixed(4));
+  return { main, jAlign, vern, total: parseFloat((main + vern).toFixed(4)) };
+}
+
+function kumpasHTML() {
+  return `
+  <div class="card">
+    <div class="k-wrap">
+      <div class="k-controls">
+        <div class="k-seg" id="kStepSeg">
+          <button data-step="0.1">0,1 mm</button>
+          <button data-step="0.05">0,05 mm</button>
+          <button data-step="0.02">0,02 mm</button>
+        </div>
+        <div class="k-seg" id="kModeSeg">
+          <button data-mode="free">🎮 Serbest</button>
+          <button data-mode="practice">🎯 Alıştırma</button>
+        </div>
+        <button class="btn btn-ghost" id="kRandomBtn" style="display:none; flex:0 0 auto; padding:10px 16px;">🎲 Yeni Ölçü</button>
+      </div>
+
+      <div class="k-readout">
+        <span class="lbl">Ölçülen değer:</span>
+        <span class="big" id="kBig">0,00</span>
+        <span class="lbl">mm</span>
+      </div>
+
+      <div class="k-svg-box" id="kSvgBox"></div>
+
+      <input type="range" class="k-range" id="kRange" />
+
+      <div id="kPractice" style="display:none;">
+        <div class="k-answer">
+          <span class="lbl">Okuduğun değeri yaz:</span>
+          <input type="text" inputmode="decimal" id="kAns" placeholder="örn. 24,55" />
+          <button class="btn btn-primary" style="flex:0 0 auto; padding:11px 18px;" id="kCheckBtn">✓ Kontrol Et</button>
+        </div>
+        <div class="k-feedback" id="kFb"></div>
+      </div>
+
+      <div class="k-break" id="kBreak"></div>
+      <div class="k-hint">💡 İpucu: Verniyer (alt) çizgilerinden hangisi üst ana cetvel çizgisiyle <b>tam üst üste</b> geliyorsa, o çizginin değeri ölçünün ondalık kısmıdır. Kumpası fareyle/parmağınla sürükle ya da alttaki çubuğu kaydır.</div>
+    </div>
+  </div>`;
+}
+
+function kInit() {
+  // segment butonları
+  document.querySelectorAll('#kStepSeg button').forEach(b => {
+    b.onclick = () => kSetStep(parseFloat(b.dataset.step));
+  });
+  document.querySelectorAll('#kModeSeg button').forEach(b => {
+    b.onclick = () => kSetMode(b.dataset.mode);
+  });
+  document.getElementById('kRandomBtn').onclick = kNewRandom;
+  document.getElementById('kCheckBtn').onclick = kCheck;
+  const r = document.getElementById('kRange');
+  r.oninput = () => kSetL(parseFloat(r.value), true);
+  // sürükleme (fare + dokunmatik)
+  const box = document.getElementById('kSvgBox');
+  box.addEventListener('pointerdown', (e) => {
+    if (kMode !== 'free') return;
+    kDrag = true; kDownOffset = kPointerL(e) - kL;
+    try { box.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  box.addEventListener('pointermove', (e) => {
+    if (!kDrag) return;
+    kSetL(kPointerL(e) - kDownOffset);
+  });
+  box.addEventListener('pointerup',   () => { kDrag = false; });
+  box.addEventListener('pointercancel',() => { kDrag = false; });
+  kSyncRange();
+  kSetStepUI(); kSetModeUI();
+  kDraw();
+}
+
+function kPointerL(e) {
+  const svg = document.querySelector('#kSvgBox svg');
+  const r = svg.getBoundingClientRect();
+  const sx = (e.clientX - r.left) * (1000 / r.width);
+  return (sx - kOX) / kPX;
+}
+function kSetL(v, fromRange) {
+  kL = kClamp(kSnap(v));
+  if (!fromRange) { const r = document.getElementById('kRange'); if (r) r.value = kL; }
+  kDraw();
+}
+function kSyncRange() {
+  const r = document.getElementById('kRange');
+  r.min = 0; r.max = kMaxL(); r.step = kStep; r.value = kL;
+}
+function kSetStep(s) {
+  kStep = s; kL = kClamp(kSnap(kL)); kSyncRange(); kSetStepUI();
+  if (kMode === 'practice') kNewRandom(); else kDraw();
+}
+function kSetStepUI() {
+  document.querySelectorAll('#kStepSeg button').forEach(b =>
+    b.classList.toggle('on', parseFloat(b.dataset.step) === kStep));
+}
+function kSetMode(m) {
+  kMode = m; kSetModeUI();
+  const practice = m === 'practice';
+  document.getElementById('kRandomBtn').style.display = practice ? 'flex' : 'none';
+  document.getElementById('kPractice').style.display = practice ? 'block' : 'none';
+  document.getElementById('kRange').style.display = practice ? 'none' : 'block';
+  if (practice) kNewRandom();
+  else { kRevealed = true; kDraw(); }
+}
+function kSetModeUI() {
+  document.querySelectorAll('#kModeSeg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.mode === kMode));
+}
+function kNewRandom() {
+  kL = kClamp(kSnap(5 + Math.random() * (kMaxL() - 8)));
+  kRevealed = false;
+  const a = document.getElementById('kAns'); if (a) a.value = '';
+  const fb = document.getElementById('kFb'); if (fb) { fb.textContent = ''; fb.className = 'k-feedback'; }
+  kDraw();
+}
+function kCheck() {
+  const a = document.getElementById('kAns');
+  const fb = document.getElementById('kFb');
+  const ans = parseFloat((a.value || '').replace(',', '.'));
+  if (isNaN(ans)) { fb.textContent = 'Önce bir değer yaz.'; fb.className = 'k-feedback no'; return; }
+  const t = kReading().total;
+  if (Math.abs(ans - t) < kStep * 0.6) {
+    fb.textContent = '✓ Doğru! Aferin 👏';
+    fb.className = 'k-feedback ok';
+  } else {
+    fb.textContent = `✗ Olmadı. Doğru değer: ${kFmt(t)} mm`;
+    fb.className = 'k-feedback no';
+  }
+  kRevealed = true; kDraw();
+}
+
+function kDraw() {
+  const { N, span } = kCfg();
+  const div = span / N;                       // verniyer bölüm uzunluğu (mm)
+  const rd = kReading();
+  const xv0 = kOX + kL * kPX;                  // verniyer sıfırı / hareketli çene
+  const guideMM = Math.round(kL + rd.jAlign * div);
+  const show = (kMode === 'free' || kRevealed);
+  const s = [];
+  s.push(`<svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg" style="cursor:${kMode==='free'?'ew-resize':'default'}">`);
+
+  // gövde (ana cetvel)
+  s.push(`<rect x="20" y="55" width="945" height="65" rx="6" fill="var(--surface-2)" stroke="var(--muted)" stroke-width="1"/>`);
+  // sabit çene bağlantısı + sol kol
+  s.push(`<rect x="${kOX-14}" y="120" width="14" height="80" fill="var(--text-soft)" opacity="0.35"/>`);
+  s.push(`<rect x="${kOX-14}" y="195" width="14" height="70" rx="3" fill="var(--text-soft)"/>`);
+
+  // ana cetvel çizgileri (mm) + cm rakamları
+  for (let mm = 0; mm <= kMaxMM; mm++) {
+    const x = kOX + mm * kPX;
+    const len = (mm % 10 === 0) ? 24 : (mm % 5 === 0) ? 15 : 9;
+    const w = (mm % 10 === 0) ? 1.5 : 1;
+    s.push(`<line x1="${x}" y1="${kYM}" x2="${x}" y2="${kYM-len}" stroke="var(--text)" stroke-width="${w}"/>`);
+    if (mm % 10 === 0) s.push(`<text x="${x}" y="${kYM-30}" font-size="13" fill="var(--text)" text-anchor="middle" font-family="sans-serif" font-weight="700">${mm/10}</text>`);
+  }
+
+  // hizalama kılavuz çizgisi (kesikli)
+  if (show) s.push(`<line x1="${kOX+guideMM*kPX}" y1="${kYM-26}" x2="${kOX+guideMM*kPX}" y2="${kYM+46}" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3" opacity="0.8"/>`);
+
+  // sürgü / verniyer plakası
+  s.push(`<rect x="${xv0}" y="120" width="${span*kPX}" height="46" rx="5" fill="var(--primary)" fill-opacity="0.12" stroke="var(--primary)" stroke-width="1"/>`);
+  // hareketli çene
+  s.push(`<rect x="${xv0}" y="120" width="14" height="80" fill="var(--primary)" opacity="0.25"/>`);
+  s.push(`<rect x="${xv0}" y="195" width="14" height="70" rx="3" fill="var(--text-soft)"/>`);
+
+  // verniyer çizgileri
+  for (let j = 0; j <= N; j++) {
+    const x = kOX + (kL + j * div) * kPX;
+    const len = (j % 5 === 0) ? 22 : 13;
+    const on = (j === rd.jAlign && show);
+    s.push(`<line x1="${x}" y1="${kYM}" x2="${x}" y2="${kYM+len}" stroke="${on?'#ef4444':'var(--primary)'}" stroke-width="${on?2.6:1.2}"/>`);
+    if (j % 5 === 0) s.push(`<text x="${x}" y="${kYM+34}" font-size="11" fill="${on?'#ef4444':'var(--text-soft)'}" text-anchor="middle" font-family="sans-serif" font-weight="${on?'700':'500'}">${kFmt(j*kStep)}</text>`);
+  }
+  // verniyer "0" oku
+  s.push(`<text x="${xv0}" y="${kYM+50}" font-size="11" fill="var(--primary)" text-anchor="middle" font-weight="700">▲</text>`);
+
+  // ölçülen parça
+  if (kL > 0.001) {
+    s.push(`<rect x="${kOX}" y="213" width="${kL*kPX}" height="40" rx="3" fill="var(--accent)" fill-opacity="0.28" stroke="var(--accent)" stroke-width="1.5"/>`);
+    const cx = kOX + kL*kPX/2;
+    s.push(`<text x="${cx}" y="237" font-size="13" fill="var(--text)" text-anchor="middle" font-weight="700">${show ? kFmt(kL)+' mm' : '?'}</text>`);
+  }
+
+  s.push(`</svg>`);
+  document.getElementById('kSvgBox').innerHTML = s.join('');
+
+  // okuma kutusu + dökümü
+  const big = document.getElementById('kBig');
+  if (show) { big.textContent = kFmt(rd.total); big.classList.remove('hidden'); }
+  else { big.textContent = '? ?'; big.classList.add('hidden'); }
+
+  const brk = document.getElementById('kBreak');
+  if (show) {
+    brk.innerHTML = `<b>Okuma:</b> Ana cetvel <b>${rd.main}</b> mm &nbsp;+&nbsp; Verniyer <b>${rd.jAlign}</b> × ${kFmt(kStep)} = <b>${kFmt(rd.vern)}</b> mm &nbsp;<b>=&nbsp; ${kFmt(rd.total)} mm</b>`;
+  } else {
+    brk.innerHTML = `🎯 Çeneler arasındaki parçanın ölçüsünü cetvelden oku ve yukarıdaki kutuya yaz, sonra <b>Kontrol Et</b>’e bas.`;
+  }
+}
+
+/* ---- PWA: telefon uygulaması desteği ---- */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.finally(() => {
+    deferredPrompt = null;
+    document.getElementById('installBtn').style.display = 'none';
+  });
+}
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBtn').style.display = 'none';
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {/* file:// üzerinde çalışmaz, sorun değil */});
+  });
+}
+
+/* başlat */
+buildNav();
+renderHome();
+</script>
+</body>
+</html>
