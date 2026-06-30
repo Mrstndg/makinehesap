@@ -215,6 +215,43 @@
   }
   .menu-toggle { display: none; }
 
+  /* ---------- Günün Şarkısı ---------- */
+  .song-card {
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    color: #fff; border-radius: var(--radius); padding: 20px 24px; margin-bottom: 14px;
+    box-shadow: 0 16px 40px rgba(124,58,237,.32);
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .song-card .disc {
+    width: 60px; height: 60px; border-radius: 50%; flex: 0 0 auto;
+    background: rgba(255,255,255,.16); display: grid; place-items: center; font-size: 28px;
+    box-shadow: inset 0 0 0 4px rgba(255,255,255,.18); animation: discSpin 7s linear infinite;
+  }
+  @keyframes discSpin { to { transform: rotate(360deg); } }
+  .song-info { flex: 1; min-width: 200px; }
+  .song-eyebrow { font-size: 11.5px; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; opacity: .9; }
+  .song-card h3 { font-size: 22px; margin: 5px 0 2px; }
+  .song-artist { font-size: 15px; opacity: .92; font-weight: 600; }
+  .song-meta { font-size: 12px; opacity: .82; margin-top: 8px; }
+  .song-btn {
+    background: #fff; color: #7c3aed; border: none; border-radius: 12px; padding: 12px 22px;
+    font-weight: 800; font-size: 15px; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px; transition: transform .15s, filter .15s; flex: 0 0 auto;
+  }
+  .song-btn:hover { transform: translateY(-2px); filter: brightness(1.04); }
+  .song-player { margin-bottom: 28px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .song-player iframe { width: 100%; height: 200px; display: block; border: 0; }
+
+  /* ---------- Ana sayfa arama ---------- */
+  .home-search { position: relative; margin-bottom: 18px; }
+  .home-search .hs-ico { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: .6; pointer-events: none; }
+  .home-search input {
+    width: 100%; padding: 14px 16px 14px 44px; border: 1.5px solid var(--border); border-radius: 14px;
+    background: var(--card); color: var(--text); font-size: 15.5px; font-family: var(--font); box-shadow: var(--shadow);
+  }
+  .home-search input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .grid-empty { text-align: center; color: var(--muted); padding: 36px; font-size: 15px; }
+
   /* ---------- Giriş (intro) ekranı ---------- */
   .intro {
     position: fixed; inset: 0; z-index: 1000;
@@ -712,6 +749,48 @@ const CALCS = {
 
 };
 
+/* =======================  GÜNÜN ŞARKISI  =======================
+   Çalma listene yeni şarkı eklemek için aşağıya { title, artist, yt }
+   ekle. 'yt' = YouTube video kimliği (linkteki v= sonrası kısım);
+   verilmezse "Dinle" butonu YouTube Music'te arar.                   */
+const PLAYLIST = [
+  { title: 'Firuze',                 artist: 'Sezen Aksu',     yt: '' },
+  { title: 'Gülpembe',               artist: 'Barış Manço',    yt: '' },
+  { title: 'Senden Daha Güzel',      artist: 'Duman',          yt: '' },
+  { title: 'Paramparça',             artist: 'Teoman',         yt: '' },
+  { title: 'Beni Benimle Bırak',     artist: 'maNga',          yt: '' },
+  { title: 'Affet',                  artist: 'Müslüm Gürses',  yt: '' },
+  { title: 'Bir Pesimistin Gözyaşları', artist: 'Sagopa Kajmer', yt: '' },
+];
+
+function songOfTheDay() {
+  const n = new Date();
+  const dayNum = Math.floor(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) / 86400000);
+  const i = ((dayNum % PLAYLIST.length) + PLAYLIST.length) % PLAYLIST.length;
+  return PLAYLIST[i];
+}
+
+function songCardHTML() {
+  if (!PLAYLIST.length) return '';
+  const s = songOfTheDay();
+  const q = encodeURIComponent(s.artist + ' ' + s.title);
+  const player = s.yt
+    ? `<div class="song-player"><iframe src="https://www.youtube.com/embed/${s.yt}" title="${s.title}" frameborder="0" allow="encrypted-media; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe></div>`
+    : '';
+  return `
+    <div class="song-card">
+      <div class="disc">🎵</div>
+      <div class="song-info">
+        <div class="song-eyebrow">🎧 Günün Şarkısı</div>
+        <h3>${s.title}</h3>
+        <div class="song-artist">${s.artist}</div>
+        <div class="song-meta">Çalma listesinden her gün otomatik seçilir · ${PLAYLIST.length} şarkı</div>
+      </div>
+      <a class="song-btn" href="https://music.youtube.com/search?q=${q}" target="_blank" rel="noopener">▶ Dinle</a>
+    </div>
+    ${player}`;
+}
+
 /* =======================  UI MOTORU  ======================= */
 let active = 'home';
 
@@ -742,7 +821,8 @@ function renderHome() {
   document.getElementById('crumb').textContent = 'Ana Sayfa';
   let tiles = '';
   for (const [key, c] of Object.entries(CALCS)) {
-    tiles += `<div class="tile" onclick="go('${key}')">
+    const search = (c.title + ' ' + c.desc + ' ' + c.cat).toLowerCase();
+    tiles += `<div class="tile" data-search="${search}" onclick="go('${key}')">
       <span class="ico">${c.ico}</span>
       <h3>${c.title}</h3>
       <p>${c.desc}</p>
@@ -754,7 +834,24 @@ function renderHome() {
       <p>Öğrenciler ve teknik personel için tasarlanmış, kolay ve şık bir hesaplama aracı.
          Soldaki menüden ya da aşağıdaki kartlardan bir hesap seç, değerleri gir, sonucu adım adım gör.</p>
     </div>
-    <div class="grid">${tiles}</div>`;
+    ${songCardHTML()}
+    <div class="home-search">
+      <span class="hs-ico">🔍</span>
+      <input id="homeSearch" type="text" placeholder="Hesap ara… (örn. dişli, asansör, kumpas)" oninput="filterTiles(this.value)" />
+    </div>
+    <div class="grid" id="homeGrid">${tiles}</div>
+    <div class="grid-empty" id="gridEmpty" style="display:none;">Aramana uygun hesap bulunamadı. 🤔</div>`;
+}
+
+function filterTiles(q) {
+  q = (q || '').trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll('#homeGrid .tile').forEach(t => {
+    const ok = !q || t.dataset.search.includes(q);
+    t.style.display = ok ? '' : 'none';
+    if (ok) shown++;
+  });
+  document.getElementById('gridEmpty').style.display = shown ? 'none' : 'block';
 }
 
 function renderCalc(key) {
