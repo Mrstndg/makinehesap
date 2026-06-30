@@ -754,19 +754,66 @@ const CALCS = {
    ekle. 'yt' = YouTube video kimliği (linkteki v= sonrası kısım);
    verilmezse "Dinle" butonu YouTube Music'te arar.                   */
 const PLAYLIST = [
-  { title: 'Firuze',                 artist: 'Sezen Aksu',     yt: '' },
-  { title: 'Gülpembe',               artist: 'Barış Manço',    yt: '' },
-  { title: 'Senden Daha Güzel',      artist: 'Duman',          yt: '' },
-  { title: 'Paramparça',             artist: 'Teoman',         yt: '' },
-  { title: 'Beni Benimle Bırak',     artist: 'maNga',          yt: '' },
-  { title: 'Affet',                  artist: 'Müslüm Gürses',  yt: '' },
-  { title: 'Bir Pesimistin Gözyaşları', artist: 'Sagopa Kajmer', yt: '' },
+  // --- Spotify çalma listesi ---
+  { title: `GÜNÜMÜ GECEME KAT`,        artist: `Jefe` },
+  { title: `How They Fall`,            artist: `laenesu` },
+  { title: `Flashing Lights`,          artist: `Kanye West` },
+  { title: `Can't Tell Me Nothing`,    artist: `Kanye West` },
+  { title: `I Wonder`,                 artist: `Kanye West` },
+  { title: `Runaway`,                  artist: `Kanye West` },
+  { title: `MY EYES`,                  artist: `Travis Scott` },
+  { title: `I KNOW ?`,                 artist: `Travis Scott` },
+  { title: `İmkansızım`,               artist: `Ezhel` },
+  { title: `Ay Işığına Bezenmiş Aşk`,  artist: `ykc` },
+  { title: `Felaket`,                  artist: `Ezhel` },
+  { title: `İyi Bil`,                  artist: `Ezhel` },
+  { title: `I Smoked Away My Brain`,   artist: `A$AP Rocky` },
+  { title: `Often`,                    artist: `The Weeknd` },
+  { title: `Dünya'dan Atlas'a`,        artist: `Şehinşah` },
+  { title: `i love you`,               artist: `Billie Eilish` },
+  { title: `Sen İstersin`,             artist: `Sedef Sebüktekin` },
+  { title: `Ateşle Barut`,             artist: `Sertab Erener` },
+  { title: `Too Many Nights`,          artist: `Metro Boomin` },
+  { title: `HOŞÇAKAL KADAR`,           artist: `Büyük Ev Ablukada` },
+  { title: `Yebba's Heartbreak`,       artist: `Drake` },
+  { title: `Melody Noir`,              artist: `Patrick Watson` },
+  { title: `Fuck The World`,           artist: `Brent Faiyaz` },
+  { title: `Earned It`,                artist: `The Weeknd` },
+  { title: `Pyramids`,                 artist: `Frank Ocean` },
+  { title: `White Ferrari`,            artist: `Frank Ocean` },
+  { title: `Diğer Yarım`,              artist: `ATE` },
+  { title: `Fırtına`,                  artist: `Şehinşah` },
+  { title: `Marslı Kadın`,             artist: `Şehinşah` },
+  { title: `Intro`,                    artist: `Drake` },
+  // --- Şehinşah – 666 ---
+  { title: `Intro`,                    artist: `Şehinşah` },
+  { title: `Sür Ya da Öl`,             artist: `Şehinşah` },
+  { title: `Sendeliyorum`,             artist: `Şehinşah` },
+  { title: `En Eskiden Beri`,          artist: `Şehinşah` },
+  { title: `Labirent`,                 artist: `Şehinşah` },
+  { title: `Rehabilite`,               artist: `Şehinşah` },
+  { title: `Az`,                       artist: `Şehinşah` },
+  { title: `Türlü Bela`,               artist: `Şehinşah` },
+  { title: `Dilemma X Kuytu`,          artist: `Şehinşah` },
+  { title: `Outro`,                    artist: `Şehinşah` },
+  // --- No.1 – Tövbe ---
+  { title: `Sis`,                      artist: `No.1` },
+  { title: `Traphouse`,                artist: `No.1` },
+  { title: `Paparoz`,                  artist: `No.1` },
+  { title: `Roberto Cavalli`,          artist: `No.1` },
+  { title: `Sürünüyorum`,              artist: `No.1` },
+  { title: `So Serseri`,               artist: `No.1` },
+  { title: `Ellere Bıraktın`,          artist: `No.1` },
+  { title: `Köpek Öldüren`,            artist: `No.1` },
+  { title: `When I Die`,               artist: `No.1` },
+  { title: `Jelatin (Freestyle)`,      artist: `No.1` },
+  { title: `Uslandım`,                 artist: `No.1` },
 ];
 
 function songOfTheDay() {
-  const n = new Date();
-  const dayNum = Math.floor(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) / 86400000);
-  const i = ((dayNum % PLAYLIST.length) + PLAYLIST.length) % PLAYLIST.length;
+  // Her saat başı sıradaki şarkıya geçer
+  const hourNum = Math.floor(Date.now() / 3600000);
+  const i = ((hourNum % PLAYLIST.length) + PLAYLIST.length) % PLAYLIST.length;
   return PLAYLIST[i];
 }
 
@@ -784,7 +831,7 @@ function songCardHTML() {
         <div class="song-eyebrow">🎧 Günün Şarkısı</div>
         <h3>${s.title}</h3>
         <div class="song-artist">${s.artist}</div>
-        <div class="song-meta">Çalma listesinden her gün otomatik seçilir · ${PLAYLIST.length} şarkı</div>
+        <div class="song-meta">🔁 Her saat başı çalma listesinden değişir · ${PLAYLIST.length} şarkı</div>
       </div>
       <a class="song-btn" href="https://music.youtube.com/search?q=${q}" target="_blank" rel="noopener">▶ Dinle</a>
     </div>
