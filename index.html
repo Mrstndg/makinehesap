@@ -215,6 +215,27 @@
   }
   .menu-toggle { display: none; }
 
+  /* ---------- Ekran Cetveli ---------- */
+  .cet-hint { font-size: 13px; color: var(--muted); line-height: 1.6; margin: 10px 0; }
+  .cet-lbl { font-size: 13.5px; color: var(--text-soft); font-weight: 600; }
+  .cet-input { width: 130px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 15px; font-family: var(--font); }
+  .cet-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .cet-stage { display: flex; justify-content: center; align-items: center; min-height: 130px; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; margin: 14px 0; padding: 14px; overflow: auto; }
+  .cet-shape-card { background: linear-gradient(135deg, #334155, #64748b); border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.28); flex: 0 0 auto; }
+  .cet-shape-coin { background: radial-gradient(circle at 35% 32%, #fde68a, #d97706 70%); border-radius: 50%; box-shadow: 0 8px 20px rgba(0,0,0,.28); flex: 0 0 auto; }
+  .cet-read { text-align: center; font-size: 14px; color: var(--text-soft); margin-bottom: 12px; }
+  .cet-readout { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+  .cet-readout .big { font-size: 40px; font-weight: 800; font-family: ui-monospace, monospace; color: var(--primary); }
+  .cet-readout .lbl { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .cet-strip { position: relative; height: 150px; background: repeating-linear-gradient(90deg, var(--surface), var(--surface) 9px, var(--surface-2) 9px, var(--surface-2) 10px); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; touch-action: none; margin-bottom: 8px; }
+  .cet-ruler { position: absolute; inset: 0; pointer-events: none; }
+  .cet-tick { position: absolute; top: 0; width: 1px; background: var(--text-soft); }
+  .cet-num { position: absolute; top: 22px; transform: translateX(-50%); font-size: 11px; color: var(--text-soft); font-weight: 700; pointer-events: none; }
+  .cet-region { position: absolute; top: 0; bottom: 0; background: rgba(37,99,235,.14); pointer-events: none; }
+  .cet-handle { position: absolute; top: 0; bottom: 0; width: 24px; margin-left: -12px; cursor: ew-resize; touch-action: none; z-index: 3; }
+  .cet-handle::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ef4444; }
+  .cet-handle span { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 28px; height: 28px; border-radius: 50%; background: #ef4444; box-shadow: 0 3px 8px rgba(0,0,0,.35); border: 2px solid #fff; }
+
   /* ---------- Günün Şarkısı ---------- */
   .song-card {
     background: linear-gradient(135deg, #7c3aed, #db2777);
@@ -747,6 +768,15 @@ const CALCS = {
     init: () => kInit(),
   },
 
+  cetvel: {
+    ico: '📐', cat: 'Ölçme Araçları',
+    title: 'Ekran Cetveli',
+    desc: 'Telefonu/bilgisayarı gerçek cetvel gibi kullan: önce bir kredi kartı ya da madeni parayla ekranı kalibre et, sonra küçük bir parçayı ekrana koyup iki çizgiyi kenarlarına getirerek gerçek mm ölç.',
+    custom: true,
+    render: () => cetvelHTML(),
+    init: () => cetvelInit(),
+  },
+
 };
 
 /* =======================  GÜNÜN ŞARKISI  =======================
@@ -1260,6 +1290,146 @@ function kDraw() {
   } else {
     brk.innerHTML = `🎯 Çeneler arasındaki parçanın ölçüsünü cetvelden oku ve yukarıdaki kutuya yaz, sonra <b>Kontrol Et</b>’e bas.`;
   }
+}
+
+/* =======================  EKRAN CETVELİ  ======================= */
+let cPPMM   = parseFloat(localStorage.getItem('mh_ppmm') || '0') || 0;  // px / mm
+let cRefKey = 'card';
+let cRefMM  = 85.6;
+let cBarPx  = 300;
+let cX1 = 0, cX2 = 0, cDragH = null;
+
+function cetvelHTML() {
+  return `
+  <div class="card">
+    <div id="calSection" class="cet-cal">
+      <h3><span class="dot"></span> 1) Ekranı Kalibre Et</h3>
+      <p class="cet-hint">Elindeki nesneyi ekranın üstüne koy ve aşağıdaki şekli <b>tam onun boyutuna</b> getir (çubuğu kaydır). Böylece uygulama senin ekranının ölçeğini öğrenir.</p>
+      <div class="k-seg" id="cRefSeg">
+        <button data-ref="card" data-mm="85.6">💳 Kredi Kartı</button>
+        <button data-ref="coin" data-mm="26.15">🪙 1 TL</button>
+        <button data-ref="custom" data-mm="0">✏️ Özel</button>
+      </div>
+      <div id="cCustomWrap" style="display:none; margin:12px 0 0;">
+        <label class="cet-lbl">Nesnenin gerçek uzunluğu (mm): </label>
+        <input type="text" inputmode="decimal" id="cCustomMM" value="50" class="cet-input" oninput="cetvelCustomMM(this.value)" />
+      </div>
+      <div class="cet-stage"><div id="cCalShape" class="cet-shape-card"></div></div>
+      <input type="range" class="k-range" id="cCalRange" />
+      <div class="cet-read" id="cScaleRead">1 mm = … px</div>
+      <div class="btn-row"><button class="btn btn-primary" onclick="cetvelSaveCal()">✓ Kalibrasyonu Kaydet</button></div>
+    </div>
+
+    <div id="measSection" style="display:none;">
+      <h3><span class="dot"></span> 2) Ölç</h3>
+      <div class="cet-readout"><span class="big" id="cMeasVal">0,0</span> <span class="lbl">mm</span> <span class="lbl" id="cMeasCm"></span></div>
+      <div class="cet-strip" id="cStrip">
+        <div class="cet-ruler" id="cRuler"></div>
+        <div class="cet-region" id="cRegion"></div>
+        <div class="cet-handle" id="cH1"><span></span></div>
+        <div class="cet-handle" id="cH2"><span></span></div>
+      </div>
+      <p class="cet-hint">📏 Parçayı ekrana (şeridin üstüne) koy, <b>kırmızı iki çizgiyi</b> parçanın kenarlarına getir; üstteki değer gerçek ölçüdür. <b>Ekran yakınlaştırmanı (zoom) değiştirme.</b></p>
+      <div class="btn-row"><button class="btn btn-ghost" onclick="cetvelRecal()">🔄 Yeniden Kalibre Et</button></div>
+    </div>
+  </div>`;
+}
+
+function cetvelInit() {
+  document.querySelectorAll('#cRefSeg button').forEach(b => {
+    b.onclick = () => cetvelSetRef(b.dataset.ref, parseFloat(b.dataset.mm));
+  });
+  const r = document.getElementById('cCalRange');
+  const stageW = (document.querySelector('.cet-stage').clientWidth || 340);
+  r.min = 40; r.max = Math.max(140, stageW - 24); r.step = 1;
+  cBarPx = Math.min(cBarPx, r.max); r.value = cBarPx;
+  r.oninput = () => { cBarPx = parseFloat(r.value); cetvelDrawCal(); };
+  cetvelSetRefUI(); cetvelDrawCal(); cetvelBindHandles();
+  if (cPPMM > 0) cetvelShowMeasure(); else cetvelShowCal();
+}
+
+function cetvelSetRef(ref, mm) {
+  cRefKey = ref;
+  document.getElementById('cCustomWrap').style.display = (ref === 'custom') ? 'block' : 'none';
+  if (ref === 'custom') { cRefMM = parseFloat((document.getElementById('cCustomMM').value || '').replace(',', '.')) || 50; }
+  else { cRefMM = mm; }
+  cetvelSetRefUI(); cetvelDrawCal();
+}
+function cetvelSetRefUI() {
+  document.querySelectorAll('#cRefSeg button').forEach(b => b.classList.toggle('on', b.dataset.ref === cRefKey));
+}
+function cetvelCustomMM(v) { cRefMM = parseFloat((v || '').replace(',', '.')) || cRefMM; cetvelDrawCal(); }
+
+function cetvelDrawCal() {
+  const shape = document.getElementById('cCalShape');
+  if (cRefKey === 'coin') { shape.className = 'cet-shape-coin'; shape.style.width = cBarPx + 'px'; shape.style.height = cBarPx + 'px'; }
+  else { shape.className = 'cet-shape-card'; shape.style.width = cBarPx + 'px'; shape.style.height = (cBarPx * 53.98 / 85.6) + 'px'; }
+  const ppmm = cBarPx / cRefMM;
+  document.getElementById('cScaleRead').innerHTML = `1 mm = <b>${ppmm.toFixed(2)}</b> px&nbsp; ·&nbsp; 1 cm ≈ <b>${(ppmm * 10).toFixed(0)}</b> px`;
+}
+
+function cetvelSaveCal() {
+  cPPMM = cBarPx / cRefMM;
+  try { localStorage.setItem('mh_ppmm', String(cPPMM)); } catch (_) {}
+  cX1 = 0; cX2 = 0;
+  cetvelShowMeasure();
+}
+function cetvelShowCal() {
+  document.getElementById('calSection').style.display = 'block';
+  document.getElementById('measSection').style.display = 'none';
+  cetvelDrawCal();
+}
+function cetvelRecal() { cetvelShowCal(); }
+
+function cetvelShowMeasure() {
+  document.getElementById('calSection').style.display = 'none';
+  document.getElementById('measSection').style.display = 'block';
+  requestAnimationFrame(() => {
+    const w = document.getElementById('cStrip').clientWidth;
+    cetvelBuildRuler(w);
+    if (!cX1 && !cX2) { cX1 = Math.round(10 * cPPMM); cX2 = Math.round(Math.min(w - 8, 10 * cPPMM + 30 * cPPMM)); }
+    cetvelUpdate();
+  });
+}
+
+function cetvelBuildRuler(w) {
+  const mmMax = Math.floor(w / cPPMM);
+  let h = '';
+  for (let mm = 0; mm <= mmMax; mm++) {
+    const x = mm * cPPMM;
+    const len = (mm % 10 === 0) ? 20 : (mm % 5 === 0) ? 13 : 7;
+    h += `<div class="cet-tick" style="left:${x}px;height:${len}px"></div>`;
+    if (mm % 10 === 0) h += `<div class="cet-num" style="left:${x}px">${mm / 10}</div>`;
+  }
+  document.getElementById('cRuler').innerHTML = h;
+}
+
+function cetvelUpdate() {
+  const strip = document.getElementById('cStrip'); if (!strip) return;
+  const w = strip.clientWidth;
+  cX1 = Math.max(0, Math.min(w, cX1)); cX2 = Math.max(0, Math.min(w, cX2));
+  document.getElementById('cH1').style.left = cX1 + 'px';
+  document.getElementById('cH2').style.left = cX2 + 'px';
+  const lo = Math.min(cX1, cX2), hi = Math.max(cX1, cX2);
+  const reg = document.getElementById('cRegion'); reg.style.left = lo + 'px'; reg.style.width = (hi - lo) + 'px';
+  const mm = (hi - lo) / cPPMM;
+  document.getElementById('cMeasVal').textContent = mm.toFixed(1).replace('.', ',');
+  document.getElementById('cMeasCm').textContent = '(' + (mm / 10).toFixed(2).replace('.', ',') + ' cm)';
+}
+
+function cetvelBindHandles() {
+  [['cH1', 1], ['cH2', 2]].forEach(([id, which]) => {
+    const el = document.getElementById(id);
+    el.addEventListener('pointerdown', (e) => { cDragH = which; try { el.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); });
+    el.addEventListener('pointermove', (e) => {
+      if (cDragH !== which) return;
+      const r = document.getElementById('cStrip').getBoundingClientRect();
+      if (which === 1) cX1 = e.clientX - r.left; else cX2 = e.clientX - r.left;
+      cetvelUpdate();
+    });
+    el.addEventListener('pointerup', () => { cDragH = null; });
+    el.addEventListener('pointercancel', () => { cDragH = null; });
+  });
 }
 
 /* ---- PWA: telefon uygulaması desteği ---- */
