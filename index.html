@@ -6,7 +6,7 @@
 <title>MakineHesap · Makine Elemanları Hesaplama</title>
 <meta name="description" content="Makine elemanları ve mekanizmalar için kolay ve şık hesaplama uygulaması." />
 <link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#2563eb" />
+<meta name="theme-color" content="#7c3aed" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="MakineHesap" />
@@ -14,51 +14,66 @@
 <link rel="icon" type="image/png" href="icon-192.png" />
 <style>
   :root {
-    --bg: #0f172a;
-    --bg-soft: #1e293b;
+    --bg: #f2f3fb;
+    --bg-soft: #e9ecf9;
     --card: #ffffff;
-    --surface: #f1f5f9;
-    --surface-2: #e2e8f0;
-    --text: #0f172a;
-    --text-soft: #475569;
-    --muted: #94a3b8;
-    --primary: #2563eb;
-    --primary-soft: #dbeafe;
-    --accent: #0ea5e9;
-    --success: #16a34a;
-    --success-soft: #dcfce7;
-    --border: #e2e8f0;
-    --shadow: 0 1px 3px rgba(15,23,42,.08), 0 10px 30px rgba(15,23,42,.06);
-    --radius: 16px;
+    --surface: #eef0fa;
+    --surface-2: #dde2f3;
+    --text: #191d36;
+    --text-soft: #4b5378;
+    --muted: #8b93b8;
+    --primary: #7c3aed;
+    --primary-soft: #ede9fe;
+    --accent: #06b6d4;
+    --success: #10b981;
+    --success-soft: #d1fae5;
+    --border: #e2e6f5;
+    --shadow: 0 1px 3px rgba(23,28,60,.07), 0 14px 40px rgba(23,28,60,.09);
+    --radius: 18px;
     --font: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    --grad: linear-gradient(135deg, #8b5cf6, #22d3ee);
+    --glass: rgba(255,255,255,.82);
+    --bg3d-op: .35;
   }
   [data-theme="dark"] {
-    --card: #1e293b;
-    --surface: #0f172a;
-    --surface-2: #334155;
-    --text: #f1f5f9;
-    --text-soft: #cbd5e1;
-    --muted: #64748b;
-    --primary-soft: #1e3a8a;
-    --border: #334155;
-    --shadow: 0 1px 3px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.3);
+    --card: #141b36;
+    --surface: #090d1f;
+    --surface-2: #273052;
+    --text: #edf0ff;
+    --text-soft: #c4cbf0;
+    --muted: #7d86b8;
+    --primary: #a78bfa;
+    --primary-soft: rgba(124,58,237,.3);
+    --success-soft: rgba(16,185,129,.16);
+    --border: rgba(148,163,255,.16);
+    --shadow: 0 1px 3px rgba(0,0,0,.4), 0 18px 50px rgba(0,0,0,.45);
+    --glass: rgba(17,23,48,.72);
+    --bg3d-op: .95;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: var(--font);
     background:
-      radial-gradient(1200px 600px at 110% -10%, rgba(37,99,235,.12), transparent 60%),
-      radial-gradient(1000px 500px at -10% 110%, rgba(14,165,233,.10), transparent 55%),
+      radial-gradient(1200px 600px at 110% -10%, rgba(124,58,237,.16), transparent 60%),
+      radial-gradient(1000px 500px at -10% 110%, rgba(34,211,238,.12), transparent 55%),
       var(--surface);
     color: var(--text);
     min-height: 100vh;
     transition: background .3s;
   }
+  /* sabit 3D arka plan sahnesi */
+  #bg3d {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none; opacity: var(--bg3d-op);
+    transition: opacity .4s;
+  }
 
   /* ---------- Layout ---------- */
-  .app { display: grid; grid-template-columns: 270px 1fr; min-height: 100vh; }
+  .app { display: grid; grid-template-columns: 270px 1fr; min-height: 100vh; position: relative; z-index: 1; }
   .sidebar {
-    background: var(--card);
+    background: var(--glass);
+    backdrop-filter: blur(18px) saturate(1.35);
+    -webkit-backdrop-filter: blur(18px) saturate(1.35);
     border-right: 1px solid var(--border);
     padding: 22px 16px;
     position: sticky; top: 0; height: 100vh; overflow-y: auto;
@@ -66,9 +81,9 @@
   .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; padding: 0 6px; }
   .brand .logo {
     width: 42px; height: 42px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background: var(--grad);
     display: grid; place-items: center; color: #fff; font-size: 22px;
-    box-shadow: 0 6px 16px rgba(37,99,235,.35);
+    box-shadow: 0 6px 16px rgba(124,58,237,.35);
   }
   .brand h1 { font-size: 18px; line-height: 1.1; }
   .brand small { color: var(--muted); font-size: 11px; font-weight: 500; }
@@ -85,7 +100,7 @@
     transition: background .15s, color .15s; user-select: none;
   }
   .nav-item:hover { background: var(--surface); color: var(--text); }
-  .nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 6px 14px rgba(37,99,235,.3); }
+  .nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 6px 14px rgba(124,58,237,.3); }
   .nav-item .ico { font-size: 18px; width: 22px; text-align: center; }
 
   .main { padding: 30px 38px 70px; }
@@ -101,19 +116,85 @@
 
   /* ---------- Home ---------- */
   .hero {
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    color: #fff; border-radius: var(--radius); padding: 34px 38px; margin-bottom: 28px;
-    box-shadow: 0 16px 40px rgba(37,99,235,.30);
+    position: relative; overflow: hidden;
+    background: linear-gradient(130deg, #6d28d9 0%, #7c3aed 35%, #0891b2 100%);
+    color: #fff; border-radius: 22px; padding: 38px 40px; margin-bottom: 28px;
+    box-shadow: 0 20px 50px rgba(124,58,237,.35);
   }
-  .hero h2 { font-size: 28px; margin-bottom: 8px; }
-  .hero p { opacity: .92; font-size: 15px; max-width: 640px; line-height: 1.5; }
+  .hero::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(340px 200px at 88% 10%, rgba(255,255,255,.18), transparent 65%),
+      radial-gradient(280px 200px at 8% 100%, rgba(34,211,238,.25), transparent 60%);
+  }
+  .hero h2 { font-size: 30px; margin-bottom: 8px; position: relative; letter-spacing: -.4px; }
+  .hero p { opacity: .93; font-size: 15px; max-width: 660px; line-height: 1.55; position: relative; }
+  .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; position: relative; }
+  .hero-actions button {
+    border: none; cursor: pointer; font-family: var(--font); font-weight: 800; font-size: 14px;
+    padding: 11px 18px; border-radius: 12px; transition: transform .15s, filter .15s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .hero-actions button:hover { transform: translateY(-2px); filter: brightness(1.06); }
+  .hero-actions .ha-solid { background: #fff; color: #6d28d9; box-shadow: 0 8px 22px rgba(0,0,0,.22); }
+  .hero-actions .ha-ghost { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  .hero-stats { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px; position: relative; }
+  .hero-stats span { font-size: 12.5px; font-weight: 700; opacity: .9; display: flex; align-items: center; gap: 6px; }
+
+  /* ---------- Konu özeti ---------- */
+  .topic {
+    background: var(--glass); border: 1px solid var(--border); border-radius: 14px;
+    margin-bottom: 20px; overflow: hidden;
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  }
+  .topic summary {
+    cursor: pointer; padding: 15px 18px; font-weight: 800; font-size: 14px; color: var(--text);
+    list-style: none; display: flex; align-items: center; gap: 9px; user-select: none;
+  }
+  .topic summary::-webkit-details-marker { display: none; }
+  .topic summary::after { content: '▾'; margin-left: auto; color: var(--muted); transition: transform .2s; }
+  .topic[open] summary::after { transform: rotate(180deg); }
+  .topic .topic-body { padding: 0 18px 16px; color: var(--text-soft); font-size: 14px; line-height: 1.75; }
+  .topic .topic-body b { color: var(--text); }
+
+  /* ---------- Sınav modu ---------- */
+  .quiz-score { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .quiz-score .pill {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 7px 14px; font-size: 13px; font-weight: 700; color: var(--text-soft);
+  }
+  .quiz-score .pill b { color: var(--primary); }
+  .quiz-q {
+    background: var(--primary-soft); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; font-size: 15.5px; line-height: 1.6; margin-bottom: 16px; color: var(--text);
+  }
+  .quiz-q b { color: var(--primary); }
+  .quiz-given { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .quiz-given .qg {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 10px 13px;
+  }
+  .quiz-given .qg small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 700; margin-bottom: 3px; }
+  .quiz-given .qg span { font-size: 16px; font-weight: 800; color: var(--text); }
+  .quiz-given .qg span i { font-style: normal; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .quiz-answer { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .quiz-answer input {
+    width: 170px; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px;
+    background: var(--surface); color: var(--text); font-size: 17px; font-weight: 700; font-family: var(--font);
+  }
+  .quiz-answer input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .quiz-answer .unit { font-weight: 800; color: var(--text-soft); }
+  .quiz-fb { font-weight: 800; font-size: 15.5px; margin-bottom: 10px; min-height: 22px; }
+  .quiz-fb.ok { color: var(--success); }
+  .quiz-fb.no { color: #f43f5e; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
   .tile {
-    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 22px; cursor: pointer; box-shadow: var(--shadow);
-    transition: transform .15s, border-color .15s;
+    transition: transform .15s, border-color .15s, box-shadow .2s;
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
   }
-  .tile:hover { transform: translateY(-4px); border-color: var(--primary); }
+  .tile:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 18px 44px rgba(124,58,237,.22); }
   .tile .ico { font-size: 30px; margin-bottom: 12px; display: block; }
   .tile h3 { font-size: 16.5px; margin-bottom: 6px; }
   .tile p { color: var(--text-soft); font-size: 13px; line-height: 1.45; }
@@ -126,8 +207,10 @@
 
   .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
   .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 24px; box-shadow: var(--shadow);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
   }
   .card h3 { font-size: 15px; margin-bottom: 18px; color: var(--text); display: flex; align-items: center; gap: 8px; }
   .card h3 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
@@ -153,7 +236,7 @@
     font-size: 15px; font-weight: 700; font-family: var(--font); transition: transform .1s, filter .15s;
   }
   .btn:active { transform: scale(.98); }
-  .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; box-shadow: 0 8px 18px rgba(37,99,235,.3); }
+  .btn-primary { background: var(--grad); color: #fff; box-shadow: 0 8px 18px rgba(124,58,237,.3); }
   .btn-primary:hover { filter: brightness(1.05); }
   .btn-ghost { background: var(--surface); color: var(--text-soft); flex: 0 0 auto; padding: 12px 16px; }
   .btn-ghost:hover { background: var(--surface-2); }
@@ -187,7 +270,7 @@
   .k-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .k-seg { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 4px; gap: 4px; }
   .k-seg button { border: none; background: transparent; color: var(--text-soft); padding: 8px 13px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13.5px; font-family: var(--font); }
-  .k-seg button.on { background: var(--primary); color: #fff; box-shadow: 0 4px 10px rgba(37,99,235,.3); }
+  .k-seg button.on { background: var(--primary); color: #fff; box-shadow: 0 4px 10px rgba(124,58,237,.3); }
   .k-readout { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .k-readout .big { font-size: 40px; font-weight: 800; font-family: ui-monospace, monospace; color: var(--primary); letter-spacing: .5px; }
   .k-readout .big.hidden { color: var(--muted); }
@@ -212,6 +295,7 @@
     .main { padding: 20px; }
     .panels { grid-template-columns: 1fr; }
     .menu-toggle { display: flex !important; }
+    .v3d-box { height: 340px; }
   }
   .menu-toggle { display: none; }
 
@@ -231,7 +315,7 @@
   .cet-ruler { position: absolute; inset: 0; pointer-events: none; }
   .cet-tick { position: absolute; top: 0; width: 1px; background: var(--text-soft); }
   .cet-num { position: absolute; top: 22px; transform: translateX(-50%); font-size: 11px; color: var(--text-soft); font-weight: 700; pointer-events: none; }
-  .cet-region { position: absolute; top: 0; bottom: 0; background: rgba(37,99,235,.14); pointer-events: none; }
+  .cet-region { position: absolute; top: 0; bottom: 0; background: rgba(124,58,237,.14); pointer-events: none; }
   .cet-handle { position: absolute; top: 0; bottom: 0; width: 24px; margin-left: -12px; cursor: ew-resize; touch-action: none; z-index: 3; }
   .cet-handle::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ef4444; }
   .cet-handle span { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 28px; height: 28px; border-radius: 50%; background: #ef4444; box-shadow: 0 3px 8px rgba(0,0,0,.35); border: 2px solid #fff; }
@@ -284,8 +368,8 @@
   .intro-bg {
     position: absolute; inset: -20%;
     background:
-      radial-gradient(600px 400px at 20% 20%, rgba(37,99,235,.45), transparent 60%),
-      radial-gradient(600px 400px at 85% 75%, rgba(14,165,233,.40), transparent 60%),
+      radial-gradient(600px 400px at 20% 20%, rgba(124,58,237,.45), transparent 60%),
+      radial-gradient(600px 400px at 85% 75%, rgba(34,211,238,.40), transparent 60%),
       radial-gradient(500px 500px at 60% 30%, rgba(99,102,241,.25), transparent 60%);
     animation: introFloat 12s ease-in-out infinite alternate;
   }
@@ -297,8 +381,8 @@
   @keyframes introUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
   .intro-logo {
     width: 92px; height: 92px; margin: 0 auto 18px; border-radius: 24px;
-    background: linear-gradient(135deg, #2563eb, #0ea5e9); display: grid; place-items: center;
-    font-size: 48px; box-shadow: 0 20px 50px rgba(37,99,235,.5);
+    background: var(--grad); display: grid; place-items: center;
+    font-size: 48px; box-shadow: 0 20px 50px rgba(124,58,237,.5);
     animation: introPop .8s .1s both, introSpin 9s 1s ease-in-out infinite;
   }
   @keyframes introPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -309,16 +393,34 @@
   .intro-chips span { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #e2e8f0; padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 600; }
   .intro-btn {
     border: none; cursor: pointer; font-family: var(--font); font-weight: 800; font-size: 17px; color: #fff;
-    background: linear-gradient(135deg, #2563eb, #0ea5e9); padding: 15px 40px; border-radius: 14px;
-    box-shadow: 0 14px 34px rgba(37,99,235,.5); transition: transform .15s, filter .15s;
+    background: var(--grad); padding: 15px 40px; border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(124,58,237,.5); transition: transform .15s, filter .15s;
   }
   .intro-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
   .intro-btn:active { transform: scale(.97); }
   .intro-site {
-    display: inline-block; margin-top: 26px; color: #93c5fd; text-decoration: none;
-    font-size: 15px; font-weight: 700; letter-spacing: .3px; border-bottom: 1px dashed rgba(147,197,253,.5); padding-bottom: 2px;
+    display: inline-block; margin-top: 26px; color: #c4b5fd; text-decoration: none;
+    font-size: 15px; font-weight: 700; letter-spacing: .3px; border-bottom: 1px dashed rgba(196,181,253,.5); padding-bottom: 2px;
   }
   .intro-site:hover { color: #fff; }
+
+  /* ---------- 3D Atölye ---------- */
+  .intro-3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .v3d-box {
+    position: relative; height: 480px; border-radius: 14px; overflow: hidden; touch-action: none;
+    background: radial-gradient(800px 500px at 30% 18%, #1c2940, #0b1220 75%);
+    border: 1px solid var(--border); cursor: grab;
+  }
+  .v3d-box:active { cursor: grabbing; }
+  .v3d-box canvas { display: block; width: 100%; height: 100%; }
+  .v3d-msg { position: absolute; inset: 0; display: grid; place-items: center; color: #94a3b8; font-size: 15px; text-align: center; padding: 20px; }
+  .v3d-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 14px; }
+  .v3d-bar label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text-soft); font-weight: 600; }
+  .v3d-bar input[type=range] { accent-color: var(--primary); width: 140px; height: 26px; }
+  .v3d-bar .btn { flex: 0 0 auto; padding: 10px 14px; font-size: 13.5px; }
+  .v3d-seg { flex-wrap: wrap; }
+  .v3d-info { margin-top: 12px; }
+  .tile { will-change: transform; }
 
   /* ---------- Sidebar footer ---------- */
   .side-foot { margin-top: 22px; padding: 14px 10px 4px; border-top: 1px solid var(--border); text-align: center; }
@@ -327,16 +429,21 @@
   .side-foot small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
 </style>
 </head>
-<body data-theme="light">
+<body data-theme="dark">
+
+<!-- Sitenin sabit 3D arka planı -->
+<canvas id="bg3d"></canvas>
 
 <!-- ===== Giriş (Intro) ekranı ===== -->
 <div id="intro" class="intro">
   <div class="intro-bg"></div>
+  <canvas id="intro3d" class="intro-3d"></canvas>
   <div class="intro-card">
     <div class="intro-logo">⚙️</div>
     <h1 class="intro-title">MakineHesap</h1>
     <p class="intro-tag">Makine Elemanları &amp; Mekanizmalar<br>Hesaplama · Simülasyon · Ölçme</p>
     <div class="intro-chips">
+      <span>🧊 3D Atölye</span>
       <span>🛞 Güç İletimi</span>
       <span>🔩 Bağlama</span>
       <span>📏 Kumpas</span>
@@ -371,7 +478,7 @@
       <div style="display:flex; gap:10px;">
         <button class="theme-btn menu-toggle" onclick="toggleMenu()">☰ Menü</button>
         <button class="theme-btn" id="installBtn" style="display:none; background:var(--primary); color:#fff; border-color:var(--primary);" onclick="installApp()">📲 Uygulamayı Yükle</button>
-        <button class="theme-btn" onclick="toggleTheme()"><span id="themeIcon">🌙</span> <span id="themeTxt">Karanlık</span></button>
+        <button class="theme-btn" onclick="toggleTheme()"><span id="themeIcon">☀️</span> <span id="themeTxt">Aydınlık</span></button>
       </div>
     </div>
     <div id="content"></div>
@@ -393,10 +500,29 @@ const fmt = (x, d = 2) => {
 /* ---- Hesaplayıcı tanımları ---- */
 const CALCS = {
 
+  sim3d: {
+    ico: '🧊', cat: '3D Atölye',
+    title: '3D Mekanizma Atölyesi',
+    desc: 'Makine elemanlarını gerçek 3 boyutlu ortamda incele: dişli çarklar, kayış–kasnak, zincir, rulman, yay ve civata–somun. Parmağınla/fareyle sürükleyip döndür, tekerlekle yakınlaştır, çalışmasını izle.',
+    custom: true,
+    render: () => v3dHTML(),
+    init: () => v3dInit(),
+  },
+
+  sinav: {
+    ico: '🎯', cat: '3D Atölye',
+    title: 'Sınav Modu',
+    desc: 'Kendini dene! Uygulama sana rastgele değerlerle gerçekçi bir soru sorar; sen hesaplarsın, o kontrol eder. Yanlışsa adım adım çözümü gösterir. Sınava hazırlanmanın en hızlı yolu.',
+    custom: true,
+    render: () => quizHTML(),
+    init: () => quizInit(),
+  },
+
   kayis: {
     ico: '🛞', cat: 'Güç İletimi',
     title: 'Kayış–Kasnak Mekanizması',
     desc: 'Döndüren kasnağın devrinden hareketle döndürülen kasnağın devrini, kayış hızını, iletim oranını ve kayış uzunluğunu hesaplar.',
+    notes: `Kayış–kasnak mekanizmaları, iki mil arasında gücü <b>sürtünme</b> yoluyla iletir. Küçük kasnak hızlı, büyük kasnak yavaş döner: çevre hızları eşit olduğu için <b>n₁·dm₁ = n₂·dm₂</b> yazılır. Sessiz çalışır, darbeleri yumuşatır ve ucuzdur; ama kayma olabileceğinden iletim oranı kesin değildir. Açık kayışta kasnaklar aynı yönde, çapraz kayışta zıt yönde döner. Kayış hızı tüm kayış boyunca aynıdır — bu yüzden V formülü hangi kasnaktan hesaplanırsa hesaplansın aynı çıkar. 🧊 3D Atölye'de çalışan halini izleyebilirsin.`,
     inputs: [
       { id: 'n1',  label: 'Döndüren kasnak devri', sub: 'n₁', unit: 'd/dak', def: 1600 },
       { id: 'dm1', label: 'Döndüren kasnak çapı',   sub: 'dm₁', unit: 'mm', def: 123.8 },
@@ -428,6 +554,7 @@ const CALCS = {
     ico: '⚙️', cat: 'Güç İletimi',
     title: 'Silindirik Düz Dişli Çark',
     desc: 'Modül ve diş sayısından dişli çarkın taksimat, diş üstü ve diş dibi çapını hesaplar. İstersen karşılık dişlisini de girerek eksenler arası mesafe ve iletim oranını bulabilirsin.',
+    notes: `Dişli çarklar gücü <b>kaymasız ve kesin oranla</b> iletir. Her şeyin anahtarı <b>modül (m)</b>'dür: dişin büyüklüğünü belirler ve <b>birbirine çalışan iki dişlinin modülü aynı olmak zorundadır</b>. Taksimat dairesi (d₀ = m·z) iki dişlinin birbirine "değdiği" hayali dairedir; diş üstü çapı ondan 2m büyük, diş dibi çapı 2.5m küçüktür. Küçük dişliye <b>pinyon</b> denir. İletim oranı diş sayılarıyla bulunur: i = z₂/z₁. Dıştan kavraşan iki dişli zıt yönde döner.`,
     inputs: [
       { id: 'm',  label: 'Modül', sub: 'm', unit: 'mm', def: 3 },
       { id: 'z1', label: 'Diş sayısı', sub: 'z₁', unit: 'adet', def: 20 },
@@ -477,6 +604,7 @@ const CALCS = {
     ico: '🔗', cat: 'Güç İletimi',
     title: 'Zincir Dişli Çark',
     desc: 'Zincir adımı, makara çapı ve diş sayısından zincir dişli çark elemanlarını hesaplar. Çok sıralı zincirler için sıra genişliklerini de verir.',
+    notes: `Zincir mekanizmaları, kayışın <b>kaymasız</b> alternatifidir: bisiklet ve motosikletteki gibi. Güç, zincir baklalarının dişlere <b>şekil bağıyla</b> takılmasıyla iletilir; bu yüzden iletim oranı kesindir. En önemli büyüklük <b>adım (p)</b> — iki makara merkezi arasındaki mesafedir. Taksimat çapı düz dişlideki gibi çarpımla değil, <b>d₀ = p / sin(180°/z)</b> ile bulunur çünkü zincir dişliye çokgen gibi oturur. Yüksek güçte tek sıra yetmezse 2–3 sıralı zincir kullanılır.`,
     inputs: [
       { id: 'p',  label: 'Zincir adımı', sub: 'p', unit: 'mm', def: 9.525 },
       { id: 'z',  label: 'Diş sayısı', sub: 'z', unit: 'adet', def: 20 },
@@ -518,6 +646,7 @@ const CALCS = {
     ico: '🌀', cat: 'Makine Elemanları',
     title: 'Helisel Yay (Basma / Çekme)',
     desc: 'Ortalama helis çapı, tel çapı ve helis sayısından yay boyu, tel boyu ve çaplarını hesaplar (DIN 29).',
+    notes: `Yaylar <b>enerji depolayan</b> makine elemanlarıdır: yük gelince şekil değiştirir, yük kalkınca geri döner. Helisel yaylar bir telin malafa (mandrel) üzerine sarılmasıyla üretilir. <b>Adım (t)</b> iki sarım arasındaki mesafe, <b>helis sayısı (z)</b> toplam sarım sayısıdır. Tel boyu hesabında sarıma başlarken ve biterken harcanan uçlar için formüle <b>+2 sarım</b> eklenir: L₀ = dm·π·(z+2). Basma yayları sarımlar arası boşluklu, çekme yayları bitişik sarılır.`,
     inputs: [
       { id: 'dm', label: 'Ortalama helis çapı', sub: 'dm', unit: 'mm', def: 30 },
       { id: 'd',  label: 'Tel çapı', sub: 'd', unit: 'mm', def: 4 },
@@ -552,6 +681,7 @@ const CALCS = {
     ico: '🦷', cat: 'Güç İletimi',
     title: 'Helisel Dişli Çark',
     desc: 'Normal modül, diş sayıları ve helis açısından alın modülü, taksimat çapları, eksenler arası mesafe ve iletim oranını hesaplar.',
+    notes: `Helisel dişlilerde dişler mile paralel değil, <b>β helis açısıyla eğik</b> açılır. Böylece dişler kavramaya kademeli girer: düz dişliye göre <b>daha sessiz, daha yumuşak</b> çalışır ve daha çok güç taşır — otomobil şanzımanları bu yüzden heliseldir. Bedeli, mili iten bir <b>eksenel kuvvet</b> doğurmasıdır (yataklar buna göre seçilir). Diş ölçüleri normal modülle (mₙ), çap hesapları ise alın modülüyle (mₜ = mₙ/cos β) yapılır. Birlikte çalışan çiftte biri sağ, diğeri sol helistir.`,
     inputs: [
       { id: 'mn',   label: 'Normal modül', sub: 'mₙ', unit: 'mm', def: 3 },
       { id: 'z1',   label: 'Pinyon diş sayısı', sub: 'z₁', unit: 'adet', def: 20 },
@@ -596,6 +726,7 @@ const CALCS = {
     ico: '⭕', cat: 'Makine Elemanları',
     title: 'Rulman Ömrü (L₁₀)',
     desc: 'Dinamik yük sayısı (C), eşdeğer yatak yükü (P) ve devirden rulmanın ömrünü milyon devir ve saat olarak hesaplar.',
+    notes: `Rulmanlar (yuvarlanmalı yataklar), dönen mili <b>kaymalı sürtünme yerine yuvarlanmayla</b> destekler: iç bilezik, dış bilezik ve aralarındaki bilyeler/makaralardan oluşur. <b>C (dinamik yük sayısı)</b> katalogdan okunan, rulmanın taşıma kapasitesini gösteren değerdir. Ömür formülündeki üs, bilyeli rulmanda 3, makaralı rulmanda 10/3'tür. <b>L₁₀</b> "aynı rulmanların %90'ının dayandığı ömür" demektir. Yük (P) yarıya inerse bilyeli rulmanın ömrü 2³ = <b>8 kat</b> artar!`,
     inputs: [
       { id: 'C', label: 'Dinamik yük sayısı', sub: 'C (katalogdan)', unit: 'N', def: 14700 },
       { id: 'P', label: 'Eşdeğer yatak yükü', sub: 'P', unit: 'N', def: 3000 },
@@ -629,6 +760,7 @@ const CALCS = {
     ico: '🔩', cat: 'Bağlama Elemanları',
     title: 'Civata Mukavemeti',
     desc: 'Eksenel kuvvet altındaki civatanın çekme gerilmesini, gerekli en küçük çapı ve sıkma momentini hesaplar.',
+    notes: `Civatalar en yaygın <b>sökülebilir</b> bağlama elemanıdır. Çekme yükünde tehlikeli kesit, dişlerin inceltiği <b>diş dibi çapıdır</b> — hesap bu çapla yapılır. Kural basittir: oluşan gerilme, emniyet gerilmesini aşmamalı (σ = F/A ≤ σₑₘ). Emniyet gerilmesi, malzemenin dayanımının bir <b>emniyet katsayısına</b> bölünmesiyle bulunur. Sıkma momenti M ≈ 0.2·F·d pratik formülüyle tahmin edilir; kritik bağlantılarda tork anahtarıyla sıkılır. 🧊 3D Atölye'de somunun vida üzerinde ilerleyişini izle.`,
     inputs: [
       { id: 'F',    label: 'Eksenel (çekme) kuvveti', sub: 'F', unit: 'N', def: 10000 },
       { id: 'd',    label: 'Hesap çapı (diş dibi)', sub: 'd', unit: 'mm', def: 12 },
@@ -662,6 +794,7 @@ const CALCS = {
     ico: '🗝️', cat: 'Bağlama Elemanları',
     title: 'Kama Bağlantısı',
     desc: 'Döndürme momentini ileten kamanın çevresel kuvvetini, kesme ve ezilme gerilmelerini hesaplar.',
+    notes: `Kama, mil ile göbek (dişli, kasnak vb.) arasında <b>momenti ileten</b> küçük ama kritik parçadır: mildeki ve göbekteki yuvalara oturur. Moment, mil yüzeyinde çevresel kuvvete dönüşür: <b>F = 2·Mt/d</b> (moment = kuvvet × yarıçap'tan gelir). Kama iki şekilde zorlanır: gövdesi ortadan <b>kesilmeye</b> (τ), yan yüzeyleri <b>ezilmeye</b> (σₑ) çalışır — ikisi de emniyet değerinin altında kalmalıdır. Genişlik ve yükseklik standart tablodan (DIN 6885) mil çapına göre seçilir, hesapla sadece <b>boy</b> kontrol edilir.`,
     inputs: [
       { id: 'Mt', label: 'Döndürme momenti', sub: 'Mt', unit: 'N·mm', def: 120000 },
       { id: 'd',  label: 'Mil çapı', sub: 'd', unit: 'mm', def: 40 },
@@ -692,6 +825,7 @@ const CALCS = {
     ico: '📌', cat: 'Bağlama Elemanları',
     title: 'Perçin Bağlantısı',
     desc: 'Yük altındaki perçin grubunun kesme ve ezilme gerilmelerini hesaplar (tek kesitli kabul).',
+    notes: `Perçin <b>sökülemeyen</b> bir bağlama elemanıdır: bir kez çakılır, sökmek için kesilir. Kaynağın zor olduğu yerlerde (uçak gövdesi, çelik köprü, kazan) hâlâ vazgeçilmezdir. Yük perçinlere <b>eşit paylaştırılır</b> kabul edilir; bu yüzden formüllerde n (perçin sayısı) vardır. İki zorlanma kontrol edilir: perçin gövdesinin <b>kesilmesi</b> (τ = F/A) ve perçin ile sac deliğinin <b>ezilmesi</b> (σₑ = F/(n·d·t)). Hangisi sınıra daha yakınsa tasarımı o belirler.`,
     inputs: [
       { id: 'F', label: 'Kuvvet', sub: 'F', unit: 'N', def: 20000 },
       { id: 'd', label: 'Perçin çapı', sub: 'd', unit: 'mm', def: 10 },
@@ -721,6 +855,7 @@ const CALCS = {
     ico: '🛗', cat: 'Taşıma Sistemleri',
     title: 'Asansör Motor Gücü',
     desc: 'Motor tahrikli redüktörlü asansörde kabin yükü, halat ve karşı ağırlıktan dengelenmemiş kuvveti ve gerekli motor gücünü hesaplar.',
+    notes: `Asansörün püf noktası <b>karşı ağırlıktır</b>: kabin + yükün yarısı kadar seçilir (Ga = Gk + Gy/2). Böylece motor tüm kabini değil, sadece <b>dengelenmemiş kısmı</b> kaldırır — bu da enerji tasarrufu demektir. Kalan dengesiz yük yerçekimiyle kuvvete (F = m·g), kuvvet de hızla çarpılıp verime bölünerek güce dönüşür: <b>P = F·V/η</b>. Verim (η) redüktör, makara ve sürtünme kayıplarını içerir; redüktörlü sistemlerde 0.4–0.6 gibi düşük değerler normaldir.`,
     inputs: [
       { id: 'kisi',  label: 'Kapasite (kişi sayısı)', sub: 'n', unit: 'kişi', def: 6 },
       { id: 'gkisi', label: 'Kişi başına ağırlık', sub: '', unit: 'kg', def: 80 },
@@ -941,19 +1076,31 @@ function renderHome() {
       <p>${c.desc}</p>
     </div>`;
   }
+  const nCalc = Object.values(CALCS).filter(c => !c.custom).length;
   document.getElementById('content').innerHTML = `
     <div class="hero">
-      <h2>Makine Elemanları Hesaplama 🛠️</h2>
-      <p>Öğrenciler ve teknik personel için tasarlanmış, kolay ve şık bir hesaplama aracı.
-         Soldaki menüden ya da aşağıdaki kartlardan bir hesap seç, değerleri gir, sonucu adım adım gör.</p>
+      <h2>Makine Elemanlarını Öğren, Hesapla, 3D'de Gör 🛠️</h2>
+      <p>Öğrenciler ve teknik personel için tasarlandı: önce <b>Konu Özeti</b>'ni oku, değerleri girip hesapla,
+         mekanizmayı <b>3D Atölye</b>'de çalışırken izle, sonra <b>Sınav Modu</b>'nda kendini dene.</p>
+      <div class="hero-actions">
+        <button class="ha-solid" onclick="go('sim3d')">🧊 3D Atölye</button>
+        <button class="ha-ghost" onclick="go('sinav')">🎯 Sınav Modu</button>
+        <button class="ha-ghost" onclick="go('kumpas')">📏 Kumpas Alıştırması</button>
+      </div>
+      <div class="hero-stats">
+        <span>🧮 ${nCalc} hesap modülü</span>
+        <span>📚 Konu özetleri</span>
+        <span>🧊 7 çalışan 3D model</span>
+        <span>📲 Telefona kurulabilir</span>
+      </div>
     </div>
-    ${songCardHTML()}
     <div class="home-search">
       <span class="hs-ico">🔍</span>
       <input id="homeSearch" type="text" placeholder="Hesap ara… (örn. dişli, asansör, kumpas)" oninput="filterTiles(this.value)" />
     </div>
     <div class="grid" id="homeGrid">${tiles}</div>
-    <div class="grid-empty" id="gridEmpty" style="display:none;">Aramana uygun hesap bulunamadı. 🤔</div>`;
+    <div class="grid-empty" id="gridEmpty" style="display:none;">Aramana uygun hesap bulunamadı. 🤔</div>
+    <div style="margin-top:26px;">${songCardHTML()}</div>`;
 }
 
 function filterTiles(q) {
@@ -995,11 +1142,17 @@ function renderCalc(key) {
       <div class="input-wrap">${control}</div>
     </div>`;
   }
+  const topic = c.notes ? `
+    <details class="topic">
+      <summary>📚 Konu Özeti — sınavdan önce 1 dakikada oku</summary>
+      <div class="topic-body">${c.notes}</div>
+    </details>` : '';
   document.getElementById('content').innerHTML = `
     <div class="calc-head">
       <h2><span class="ico">${c.ico}</span> ${c.title}</h2>
       <p>${c.desc}</p>
     </div>
+    ${topic}
     <div class="panels">
       <div class="card">
         <h3><span class="dot"></span> Girdiler</h3>
@@ -1063,6 +1216,206 @@ function toggleMenu() { document.getElementById('sidebar').classList.toggle('ope
 function enterApp() {
   document.getElementById('intro').classList.add('hide');
   try { localStorage.setItem('mh_seen', '1'); } catch (_) {}
+  setTimeout(() => { if (window.MH3D) MH3D.introStop(); }, 700);
+}
+
+/* =======================  3D MEKANİZMA ATÖLYESİ (arayüz)  =======================
+   Three.js sahne kodu sayfanın en altındaki <script type="module"> içindedir.
+   Buradaki kod yalnızca HTML iskeletini kurar; MH3D.mount() sahneyi bağlar.   */
+const V3D_MODELS = [
+  ['spur',    '⚙️ Düz Dişli'],
+  ['helical', '🦷 Helisel Dişli'],
+  ['belt',    '🛞 Kayış–Kasnak'],
+  ['chain',   '🔗 Zincir Dişli'],
+  ['bearing', '⭕ Rulman'],
+  ['spring',  '🌀 Helisel Yay'],
+  ['bolt',    '🔩 Civata–Somun'],
+];
+
+function v3dHTML() {
+  const segs = V3D_MODELS.map(([k, t], i) =>
+    `<button data-model="${k}" class="${i === 0 ? 'on' : ''}">${t}</button>`).join('');
+  return `
+  <div class="card">
+    <div class="k-controls" style="margin-bottom:14px;">
+      <div class="k-seg v3d-seg" id="v3dSeg">${segs}</div>
+    </div>
+    <div class="v3d-box" id="v3dBox"><div class="v3d-msg" id="v3dMsg">🧊 3D sahne yükleniyor…<br><small>(ilk açılışta internet gerekir, sonra çevrimdışı da çalışır)</small></div></div>
+    <div class="v3d-bar">
+      <label>🐢 Hız <input type="range" id="v3dSpeed" min="0" max="3" step="0.05" value="1"> 🐇</label>
+      <button class="btn btn-ghost" id="v3dPause">⏸ Durdur</button>
+      <button class="btn btn-ghost" id="v3dAuto">🔄 Sahneyi Döndür</button>
+      <span id="v3dGearCtl" style="display:none; align-items:center; gap:14px;">
+        <label>z₁ <input type="range" id="v3dZ1" min="8" max="30" step="1" value="14"> <b id="v3dZ1v">14</b></label>
+        <label>z₂ <input type="range" id="v3dZ2" min="10" max="60" step="1" value="28"> <b id="v3dZ2v">28</b></label>
+      </span>
+    </div>
+    <div class="k-hint v3d-info" id="v3dInfo"></div>
+  </div>`;
+}
+
+function v3dInit() {
+  if (window.MH3D) MH3D.mount();
+  /* MH3D henüz yüklenmediyse modül script'i hazır olunca DOM'u bulup kendisi bağlanır */
+}
+
+/* ---- Ana sayfa kartlarında 3D eğilme (tilt) efekti ---- */
+document.addEventListener('pointermove', (e) => {
+  const t = e.target && e.target.closest ? e.target.closest('.tile') : null;
+  document.querySelectorAll('.tile.tilted').forEach(o => {
+    if (o !== t) { o.style.transform = ''; o.classList.remove('tilted'); }
+  });
+  if (!t || e.pointerType === 'touch') return;
+  const r = t.getBoundingClientRect();
+  const px = (e.clientX - r.left) / r.width - .5;
+  const py = (e.clientY - r.top) / r.height - .5;
+  t.style.transform = `perspective(700px) rotateX(${(-py * 8).toFixed(2)}deg) rotateY(${(px * 10).toFixed(2)}deg) translateY(-4px)`;
+  t.classList.add('tilted');
+});
+document.addEventListener('pointerleave', () => {
+  document.querySelectorAll('.tile.tilted').forEach(o => { o.style.transform = ''; o.classList.remove('tilted'); });
+});
+
+/* =======================  SINAV MODU  =======================
+   Mevcut CALCS hesaplarından rastgele değerlerle soru üretir,
+   cevabı %2 toleransla kontrol eder, çözümü adım adım gösterir. */
+const QUIZ_POOL = ['kayis', 'disli', 'zincir', 'yay', 'helisel', 'yatak', 'civata', 'kama', 'percin', 'asansor'];
+let qCur = null;
+let qScore = { ok: 0, total: 0 };
+try { qScore = JSON.parse(localStorage.getItem('mh_quiz')) || qScore; } catch (_) {}
+
+function qNice(v) {
+  if (v >= 200) return Math.round(v / 10) * 10;
+  if (v >= 50)  return Math.round(v / 5) * 5;
+  if (v >= 20)  return Math.round(v);
+  if (v >= 2)   return Math.round(v * 2) / 2;
+  return Math.round(v * 100) / 100;
+}
+function qParseNum(s) {
+  // fmt() çıktısını (tr-TR: binlik '.', ondalık ',') sayıya çevirir
+  const x = parseFloat(String(s).replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(x) ? x : NaN;
+}
+
+function quizHTML() {
+  const pct = qScore.total ? Math.round(qScore.ok / qScore.total * 100) + '%' : '—';
+  return `
+  <div class="card">
+    <div class="quiz-score">
+      <span class="pill">✅ Doğru: <b id="qOk">${qScore.ok}</b></span>
+      <span class="pill">📝 Toplam: <b id="qTot">${qScore.total}</b></span>
+      <span class="pill">🎯 Başarı: <b id="qPct">${pct}</b></span>
+      <button class="btn btn-primary" style="flex:0 0 auto; padding:10px 18px;" onclick="qNew()">🎲 Yeni Soru</button>
+    </div>
+    <div id="qBody"></div>
+  </div>`;
+}
+function quizInit() { qNew(); }
+
+function qNew(depth = 0) {
+  const key = QUIZ_POOL[Math.floor(Math.random() * QUIZ_POOL.length)];
+  const c = CALCS[key];
+  const v = {}, given = [];
+  for (const inp of c.inputs) {
+    if (inp.type === 'select') {
+      const opt = inp.options[Math.floor(Math.random() * inp.options.length)];
+      v[inp.id] = opt.v;
+      given.push({ label: inp.label, val: opt.t, unit: '' });
+    } else if (inp.def === '') {
+      v[inp.id] = '';
+    } else {
+      let x = qNice(inp.def * (0.55 + Math.random() * 1.2));
+      if (/adet|kişi/.test(inp.unit)) x = Math.max(1, Math.round(x));
+      if (!(x > 0)) x = inp.def;
+      v[inp.id] = x;
+      given.push({ label: inp.label, sub: inp.sub, val: fmt(x, 3), unit: inp.unit });
+    }
+  }
+  let out;
+  try { out = c.compute(v); } catch (e) { return depth < 6 ? qNew(depth + 1) : null; }
+  const parsable = out.rows.filter(r => Number.isFinite(qParseNum(r.val)));
+  if (!parsable.length) return depth < 6 ? qNew(depth + 1) : null;
+  const his = parsable.filter(r => r.hi);
+  const pool = his.length ? his : parsable;
+  const target = pool[Math.floor(Math.random() * pool.length)];
+  qCur = { key, c, given, out, target, t: qParseNum(target.val), done: false };
+  qRender();
+}
+
+function qRender() {
+  const q = qCur, body = document.getElementById('qBody');
+  if (!q || !body) return;
+  const givenHTML = q.given.map(g =>
+    `<div class="qg"><small>${g.label}${g.sub ? ' (' + g.sub + ')' : ''}</small><span>${g.val} <i>${g.unit}</i></span></div>`).join('');
+  body.innerHTML = `
+    <div class="quiz-q">${q.c.ico} <b>${q.c.title}</b> — Aşağıdaki değerlere göre <b>${q.target.label.toLowerCase()}</b> kaçtır?${q.target.unit ? ` <span style="opacity:.75">(${q.target.unit} cinsinden)</span>` : ''}</div>
+    <div class="quiz-given">${givenHTML}</div>
+    <div class="quiz-answer">
+      <input type="text" inputmode="decimal" id="qAns" placeholder="cevabın…" onkeydown="if(event.key==='Enter')qCheck()" />
+      <span class="unit">${q.target.unit}</span>
+      <button class="btn btn-primary" style="flex:0 0 auto; padding:12px 18px;" onclick="qCheck()">✓ Kontrol Et</button>
+      <button class="btn btn-ghost" onclick="qReveal(true)">💡 Çözümü Göster</button>
+    </div>
+    <div class="quiz-fb" id="qFb"></div>
+    <div id="qSol" style="display:none;"></div>`;
+  const a = document.getElementById('qAns'); if (a) a.focus();
+}
+
+function qCheck() {
+  const q = qCur;
+  if (!q || q.done) return;
+  const fb = document.getElementById('qFb');
+  const ans = parseFloat((document.getElementById('qAns').value || '').trim().replace(',', '.'));
+  if (!Number.isFinite(ans)) { fb.textContent = 'Önce bir değer yaz.'; fb.className = 'quiz-fb no'; return; }
+  q.done = true;
+  qScore.total++;
+  const tol = Math.max(Math.abs(q.t) * 0.02, 0.01);   // %2 tolerans (yuvarlama payı)
+  if (Math.abs(ans - q.t) <= tol) {
+    qScore.ok++;
+    fb.textContent = '✓ Doğru! Helal sana 👏';
+    fb.className = 'quiz-fb ok';
+  } else {
+    fb.textContent = `✗ Olmadı. Doğru cevap: ${q.target.val} ${q.target.unit}`;
+    fb.className = 'quiz-fb no';
+  }
+  qSave();
+  qShowSolution();
+}
+
+function qReveal(manual) {
+  const q = qCur; if (!q) return;
+  if (manual && !q.done) {
+    q.done = true; qScore.total++; qSave();
+    const fb = document.getElementById('qFb');
+    fb.textContent = `Doğru cevap: ${q.target.val} ${q.target.unit}`;
+    fb.className = 'quiz-fb';
+  }
+  qShowSolution();
+}
+
+function qShowSolution() {
+  const q = qCur, sol = document.getElementById('qSol');
+  if (!q || !sol) return;
+  let html = '<h3 style="font-size:14px; margin:16px 0 4px; display:flex; align-items:center; gap:8px;"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--primary);"></span> Adım Adım Çözüm</h3>';
+  for (const r of q.out.rows) {
+    html += `<div class="result-row ${r.hi ? 'highlight' : ''}">
+      <div class="r-label">${r.label}<small>${r.sub}</small></div>
+      <div class="r-val">${r.val}<span>${r.unit}</span></div>
+    </div>`;
+  }
+  if (q.out.formula) {
+    html += `<div class="formula-box"><div class="ftitle">Kullanılan Formüller</div>${q.out.formula.join('<br>')}</div>`;
+  }
+  sol.innerHTML = html;
+  sol.style.display = 'block';
+}
+
+function qSave() {
+  try { localStorage.setItem('mh_quiz', JSON.stringify(qScore)); } catch (_) {}
+  const ok = document.getElementById('qOk'), tot = document.getElementById('qTot'), pct = document.getElementById('qPct');
+  if (ok) ok.textContent = qScore.ok;
+  if (tot) tot.textContent = qScore.total;
+  if (pct) pct.textContent = qScore.total ? Math.round(qScore.ok / qScore.total * 100) + '%' : '—';
 }
 
 /* =======================  KUMPAS SİMÜLASYONU  ======================= */
@@ -1459,6 +1812,637 @@ if ('serviceWorker' in navigator) {
 /* başlat */
 buildNav();
 renderHome();
+</script>
+
+<!-- =======================  3D MOTOR (Three.js)  ======================= -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ---------- malzemeler ---------- */
+const MAT = {
+  steel:  () => new THREE.MeshStandardMaterial({ color: 0x9fb2c8, metalness: .95, roughness: .32 }),
+  brass:  () => new THREE.MeshStandardMaterial({ color: 0xd9a441, metalness: .95, roughness: .3 }),
+  dark:   () => new THREE.MeshStandardMaterial({ color: 0x3a4657, metalness: .9,  roughness: .45 }),
+  blue:   () => new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: .85, roughness: .35 }),
+  rubber: () => new THREE.MeshStandardMaterial({ color: 0x232a33, metalness: .05, roughness: .92 }),
+};
+
+/* ---------- geometri yardımcıları ---------- */
+function gearShape(z, m, o = {}) {
+  const add = (o.add ?? 1.0) * m, ded = (o.ded ?? 1.25) * m;
+  const r0 = m * z / 2, ra = r0 + add, rf = Math.max(r0 - ded, m);
+  const t = Math.PI * 2 / z;
+  const f1 = o.f1 ?? .13, f2 = o.f2 ?? .37, f3 = .5;
+  const s = new THREE.Shape();
+  const px = (ang, r) => [r * Math.cos(ang), r * Math.sin(ang)];
+  for (let i = 0; i < z; i++) {
+    const a = i * t;
+    if (i === 0) s.moveTo(...px(a, rf)); else s.lineTo(...px(a, rf));
+    s.lineTo(...px(a + t * f1, ra));
+    s.lineTo(...px(a + t * f2, ra));
+    s.lineTo(...px(a + t * f3, rf));
+    s.absarc(0, 0, rf, a + t * f3, a + t, false);
+  }
+  s.closePath();
+  const holeR = o.hole ?? Math.max(rf * .28, m * 1.1);
+  if (holeR > 0) { const h = new THREE.Path(); h.absarc(0, 0, holeR, 0, Math.PI * 2, true); s.holes.push(h); }
+  return s;
+}
+function gearMesh(z, m, depth, mat, o) {
+  const geo = new THREE.ExtrudeGeometry(gearShape(z, m, o), {
+    depth, bevelEnabled: true, bevelThickness: m * .12, bevelSize: m * .1, bevelSegments: 1, curveSegments: 4,
+  });
+  geo.translate(0, 0, -depth / 2);
+  return new THREE.Mesh(geo, mat);
+}
+function helicalGearMesh(z, m, depth, mat, twist) {
+  const n = 10, g = new THREE.Group(), sliceD = depth / n, shape = gearShape(z, m);
+  for (let i = 0; i < n; i++) {
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: sliceD * 1.08, bevelEnabled: false, curveSegments: 4 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.z = -depth / 2 + i * sliceD;
+    mesh.rotation.z = twist * (i / (n - 1) - .5);
+    g.add(mesh);
+  }
+  return g;
+}
+function ringMesh(rOut, rIn, depth, mat) {
+  const s = new THREE.Shape(); s.absarc(0, 0, rOut, 0, Math.PI * 2, false);
+  const h = new THREE.Path(); h.absarc(0, 0, rIn, 0, Math.PI * 2, true); s.holes.push(h);
+  const geo = new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: .8, bevelSize: .8, bevelSegments: 2, curveSegments: 48 });
+  geo.translate(0, 0, -depth / 2);
+  return new THREE.Mesh(geo, mat);
+}
+function hexMesh(rad, h, mat, holeR = 0) {
+  const s = new THREE.Shape();
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * Math.PI * 2;
+    if (i === 0) s.moveTo(rad * Math.cos(a), rad * Math.sin(a)); else s.lineTo(rad * Math.cos(a), rad * Math.sin(a));
+  }
+  s.closePath();
+  if (holeR > 0) { const p = new THREE.Path(); p.absarc(0, 0, holeR, 0, Math.PI * 2, true); s.holes.push(p); }
+  const geo = new THREE.ExtrudeGeometry(s, { depth: h, bevelEnabled: true, bevelThickness: .6, bevelSize: .6, bevelSegments: 1 });
+  geo.translate(0, 0, -h / 2);
+  return new THREE.Mesh(geo, mat);
+}
+function shaftZ(r, len, mat) {
+  const geo = new THREE.CylinderGeometry(r, r, len, 32);
+  geo.rotateX(Math.PI / 2);
+  return new THREE.Mesh(geo, mat);
+}
+class HelixCurve extends THREE.Curve {
+  constructor(r, pitch, turns) { super(); this.r = r; this.pitch = pitch; this.turns = turns; }
+  getPoint(t) {
+    const a = this.turns * Math.PI * 2 * t;
+    return new THREE.Vector3(this.r * Math.cos(a), this.pitch * this.turns * (t - .5), this.r * Math.sin(a));
+  }
+}
+function disposeDeep(root) {
+  root.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(mm => mm.dispose());
+  });
+}
+
+/* ---------- 3D modeller ---------- */
+function buildSpur(P) {
+  const m = 4, z1 = P.z1, z2 = P.z2, depth = 16;
+  const r1 = m * z1 / 2, r2 = m * z2 / 2;
+  const t1 = Math.PI * 2 / z1, t2 = Math.PI * 2 / z2;
+  const g1 = gearMesh(z1, m, depth, MAT.steel());
+  const g2 = gearMesh(z2, m, depth, MAT.brass());
+  g1.position.x = -r1; g2.position.x = r2;
+  const s1 = shaftZ(m * 1.02, depth * 3, MAT.dark()); s1.position.x = -r1;
+  const s2 = shaftZ(m * 1.02, depth * 3, MAT.dark()); s2.position.x = r2;
+  const grp = new THREE.Group(); grp.add(g1, g2, s1, s2);
+  const rot10 = -t1 * .25, rot20 = Math.PI - t2 * .75;
+  let th = 0;
+  return {
+    group: grp,
+    update(dt, sp) {
+      th += dt * sp * 1.2;
+      g1.rotation.z = rot10 + th;
+      g2.rotation.z = rot20 - th * z1 / z2;
+    },
+    info: `⚙️ <b>Silindirik düz dişli çift</b> — z₁ = ${z1}, z₂ = ${z2}, m = 4 mm. İletim oranı <b>i = z₂/z₁ = ${(z2 / z1).toFixed(2)}</b>; pinyon ${(z2 / z1).toFixed(2)} tur attığında büyük çark 1 tur atar ve çarklar <b>zıt yönde</b> döner. Üstteki z₁ / z₂ sürgüleriyle diş sayılarını değiştir.`,
+  };
+}
+function buildHelical(P) {
+  const m = 4, z1 = P.z1, z2 = P.z2, depth = 24, tw = .5;
+  const r1 = m * z1 / 2, r2 = m * z2 / 2;
+  const t1 = Math.PI * 2 / z1, t2 = Math.PI * 2 / z2;
+  const g1 = helicalGearMesh(z1, m, depth, MAT.steel(), tw);
+  const g2 = helicalGearMesh(z2, m, depth, MAT.brass(), -tw);
+  g1.position.x = -r1; g2.position.x = r2;
+  const s1 = shaftZ(m * 1.02, depth * 2.6, MAT.dark()); s1.position.x = -r1;
+  const s2 = shaftZ(m * 1.02, depth * 2.6, MAT.dark()); s2.position.x = r2;
+  const grp = new THREE.Group(); grp.add(g1, g2, s1, s2);
+  const rot10 = -t1 * .25, rot20 = Math.PI - t2 * .75;
+  let th = 0;
+  return {
+    group: grp,
+    update(dt, sp) {
+      th += dt * sp * 1.2;
+      g1.rotation.z = rot10 + th;
+      g2.rotation.z = rot20 - th * z1 / z2;
+    },
+    info: `🦷 <b>Helisel dişli çift</b> — dişler eksene açılı (β) olduğu için kavrama kademeli başlar: daha <b>sessiz ve yumuşak</b> çalışır, ama eksenel kuvvet doğurur. Karşılıklı çarkların helis yönleri zıttır (sağ/sol helis). i = z₂/z₁ = ${(z2 / z1).toFixed(2)}.`,
+  };
+}
+function pulleyMesh(r, w, matRim, matSpoke) {
+  const g = new THREE.Group();
+  g.add(ringMesh(r, r * .78, w, matRim));
+  g.add(shaftZ(r * .2, w * 1.05, matRim));
+  for (let i = 0; i < 4; i++) {
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(r * .62, r * .16, w * .5), matSpoke);
+    sp.position.set(Math.cos(i * Math.PI / 2) * r * .49, Math.sin(i * Math.PI / 2) * r * .49, 0);
+    sp.rotation.z = i * Math.PI / 2;
+    g.add(sp);
+  }
+  return g;
+}
+function beltShapePath(c1x, c2x, R1, R2, isHole) {
+  const a = c2x - c1x;
+  const phi = Math.acos((R1 - R2) / a);
+  const P = isHole ? new THREE.Path() : new THREE.Shape();
+  P.absarc(c1x, 0, R1, phi, Math.PI * 2 - phi, false);
+  P.lineTo(c2x + R2 * Math.cos(-phi), R2 * Math.sin(-phi));
+  P.absarc(c2x, 0, R2, -phi, phi, false);
+  P.closePath();
+  return P;
+}
+function buildBelt() {
+  const r1 = 55, r2 = 30, a = 150, w = 22, h = 3.2;
+  const c1x = -a / 2, c2x = a / 2;
+  const p1 = pulleyMesh(r1, w, MAT.steel(), MAT.dark()); p1.position.x = c1x;
+  const p2 = pulleyMesh(r2, w, MAT.brass(), MAT.dark()); p2.position.x = c2x;
+  const sh1 = shaftZ(r1 * .11, w * 3, MAT.dark()); sh1.position.x = c1x;
+  const sh2 = shaftZ(r2 * .16, w * 3, MAT.dark()); sh2.position.x = c2x;
+  const beltShape = beltShapePath(c1x, c2x, r1 + h, r2 + h, false);
+  beltShape.holes.push(beltShapePath(c1x, c2x, r1 - h, r2 - h, true));
+  const beltGeo = new THREE.ExtrudeGeometry(beltShape, { depth: w * .55, bevelEnabled: false, curveSegments: 48 });
+  beltGeo.translate(0, 0, -w * .55 / 2);
+  const belt = new THREE.Mesh(beltGeo, MAT.rubber());
+  const grp = new THREE.Group(); grp.add(p1, p2, sh1, sh2, belt);
+  return {
+    group: grp,
+    update(dt, sp) {
+      const w1 = dt * sp * 1.4;
+      p1.rotation.z += w1;
+      p2.rotation.z += w1 * r1 / r2;
+    },
+    info: `🛞 <b>Kayış–kasnak mekanizması</b> — dm₁ = ${2 * r1} mm, dm₂ = ${2 * r2} mm. Açık kayışta iki kasnak <b>aynı yönde</b> döner; küçük kasnak i = dm₁/dm₂ = ${(r1 / r2).toFixed(2)} kat hızlı döner. Kayış hızı her noktada aynıdır: V = π·dm·n / (1000·60).`,
+  };
+}
+function buildChain() {
+  const p = 13, z1 = 21, z2 = 13, aDist = 130;
+  const r1 = p / (2 * Math.sin(Math.PI / z1));
+  const r2 = p / (2 * Math.sin(Math.PI / z2));
+  const c1x = -aDist / 2, c2x = aDist / 2;
+  const gopt = { f1: .2, f2: .3, add: .85, ded: .9 };
+  const g1 = gearMesh(z1, 2 * r1 / z1, 7, MAT.steel(), gopt); g1.position.x = c1x;
+  const g2 = gearMesh(z2, 2 * r2 / z2, 7, MAT.steel(), gopt); g2.position.x = c2x;
+  const s1 = shaftZ(6, 30, MAT.dark()); s1.position.x = c1x;
+  const s2 = shaftZ(5, 30, MAT.dark()); s2.position.x = c2x;
+  const phi = Math.acos((r1 - r2) / aDist);
+  const pt = (cx, r, ang) => new THREE.Vector2(cx + r * Math.cos(ang), r * Math.sin(ang));
+  const path = new THREE.CurvePath();
+  path.add(new THREE.EllipseCurve(c1x, 0, r1, r1, phi, Math.PI * 2 - phi, false));
+  path.add(new THREE.LineCurve(pt(c1x, r1, -phi), pt(c2x, r2, -phi)));
+  path.add(new THREE.EllipseCurve(c2x, 0, r2, r2, -phi, phi, false));
+  path.add(new THREE.LineCurve(pt(c2x, r2, phi), pt(c1x, r1, phi)));
+  const L = path.getLength();
+  const n = Math.max(10, Math.round(L / p));
+  const geoA = new THREE.BoxGeometry(p * .9, 4.6, 7);
+  const geoB = new THREE.BoxGeometry(p * .68, 4.6, 10);
+  const matA = MAT.steel(), matB = MAT.dark();
+  const grp = new THREE.Group(); grp.add(g1, g2, s1, s2);
+  const links = [];
+  for (let i = 0; i < n; i++) {
+    const mesh = new THREE.Mesh(i % 2 ? geoB : geoA, i % 2 ? matB : matA);
+    links.push(mesh); grp.add(mesh);
+  }
+  let off = 0, th = 0;
+  const place = () => {
+    for (let i = 0; i < n; i++) {
+      const u = ((i / n + off) % 1 + 1) % 1;
+      const P2 = path.getPointAt(u), T2 = path.getTangentAt(u);
+      links[i].position.set(P2.x, P2.y, 0);
+      links[i].rotation.z = Math.atan2(T2.y, T2.x);
+    }
+  };
+  place();
+  return {
+    group: grp,
+    update(dt, sp) {
+      const v = dt * sp * 45;           // zincir çizgisel hızı (mm/kare)
+      off = (off + v / L) % 1;
+      th += v;
+      g1.rotation.z = th / r1;
+      g2.rotation.z = th / r2;
+      place();
+    },
+    info: `🔗 <b>Zincir–dişli mekanizması</b> — z₁ = ${z1}, z₂ = ${z2}, adım p = ${p} mm. Zincirde <b>kayma olmaz</b>; iletim oranı tam olarak i = z₁/z₂ = ${(z1 / z2).toFixed(2)}'dir. Taksimat çapı d₀ = p / sin(180°/z) formülüyle bulunur (bkz. Zincir Dişli Çark hesabı).`,
+  };
+}
+function buildBearing() {
+  const grp = new THREE.Group();
+  const outer = ringMesh(40, 30, 16, MAT.steel());
+  const innerG = new THREE.Group();
+  innerG.add(ringMesh(23, 15, 16, MAT.steel()));
+  const shaft = shaftZ(14.6, 64, MAT.dark());
+  const key = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 64), MAT.brass());
+  key.position.y = 14.8;
+  innerG.add(shaft, key);
+  const balls = new THREE.Group();
+  const nb = 9;
+  for (let i = 0; i < nb; i++) {
+    const b = new THREE.Mesh(new THREE.SphereGeometry(4.6, 24, 16), MAT.steel());
+    const a = i / nb * Math.PI * 2;
+    b.position.set(Math.cos(a) * 26.5, Math.sin(a) * 26.5, 0);
+    balls.add(b);
+  }
+  grp.add(outer, innerG, balls);
+  return {
+    group: grp,
+    update(dt, sp) {
+      const w = dt * sp * 1.5;
+      innerG.rotation.z += w;
+      balls.rotation.z += w * .44;   // bilyeler iç bileziğin ~yarısı hızla yörüngede döner
+    },
+    info: `⭕ <b>Bilyeli rulman</b> — dış bilezik sabit, mil ile iç bilezik döner; bilyeler iki bilezik arasında yuvarlanarak <b>kaymalı sürtünmeyi yuvarlanmaya</b> çevirir. Ömrü L₁₀ = (C/P)³ formülüyle hesaplanır (bkz. Rulman Ömrü hesabı). Sarı çizgi mildeki kama yuvasıdır.`,
+  };
+}
+function buildSpring() {
+  const R = 26, d = 6, turns = 7, H = 95;
+  const curve = new HelixCurve(R, H / turns, turns);
+  const spring = new THREE.Mesh(new THREE.TubeGeometry(curve, 320, d / 2, 14, false), MAT.steel());
+  const plateGeo = new THREE.CylinderGeometry(R + d, R + d, 4, 48);
+  const top = new THREE.Mesh(plateGeo, MAT.dark());
+  const bot = new THREE.Mesh(plateGeo.clone(), MAT.dark());
+  bot.position.y = -(H / 2 + d / 2 + 2);
+  const grp = new THREE.Group(); grp.add(spring, top, bot);
+  let T = 0;
+  return {
+    group: grp,
+    update(dt, sp) {
+      T += dt * sp;
+      const s = .74 + .24 * Math.sin(T * 2);
+      spring.scale.y = s;
+      spring.position.y = -(H / 2) * (1 - s);
+      top.position.y = H * s - H / 2 + d / 2 + 2;
+    },
+    info: `🌀 <b>Helisel basma yayı</b> — dm = ${2 * R} mm, tel çapı d = ${d} mm, z = ${turns} sarım. Yük altında sıkışır, kalkınca geri açılır; enerji depolar. Tel boyu L₀ = dm·π·(z+2) formülüyle bulunur (bkz. Helisel Yay hesabı).`,
+  };
+}
+function buildBolt() {
+  const rs = 10, Lsh = 90, pitch = 6;
+  const head = hexMesh(19, 13, MAT.steel());
+  head.geometry.rotateX(Math.PI / 2);
+  head.position.y = Lsh / 2 + 6.5;
+  const shank = new THREE.Mesh(new THREE.CylinderGeometry(rs, rs, Lsh, 32), MAT.steel());
+  const tip = new THREE.Mesh(new THREE.CylinderGeometry(rs * .7, rs, 6, 32), MAT.steel());
+  tip.position.y = -(Lsh / 2 + 3);
+  const thr = new THREE.Mesh(
+    new THREE.TubeGeometry(new HelixCurve(rs + 1.1, pitch, 11), 480, 1.35, 10, false), MAT.dark());
+  thr.position.y = -Lsh / 2 + (pitch * 11) / 2;
+  const nut = hexMesh(17, 11, MAT.brass(), rs + 2.6);
+  nut.geometry.rotateX(Math.PI / 2);
+  const grp = new THREE.Group(); grp.add(head, shank, tip, thr, nut);
+  let T = 0;
+  return {
+    group: grp,
+    update(dt, sp) {
+      T += dt * sp;
+      const u = (Math.sin(T * .8) + 1) / 2;
+      const y = -40 + 50 * u;
+      nut.position.y = y;
+      nut.rotation.y = -(y / pitch) * Math.PI * 2;
+    },
+    info: `🔩 <b>Civata–somun bağlantısı</b> — somun, vida helisi üzerinde dönerek ilerler: <b>bir tam tur = bir adım (hatve)</b> kadar yol. Sökülebilir bağlantıların en yaygınıdır. Sıkma momenti M ≈ 0.2·F·d (bkz. Civata Mukavemeti hesabı).`,
+  };
+}
+const BUILDERS = { spur: buildSpur, helical: buildHelical, belt: buildBelt, chain: buildChain, bearing: buildBearing, spring: buildSpring, bolt: buildBolt };
+
+/* ---------- 3D Atölye görüntüleyicisi ---------- */
+let viewer = null;
+function mountViewer() {
+  const box = document.getElementById('v3dBox');
+  if (!box || box.dataset.mounted) return;
+  if (viewer) { viewer.dispose(); viewer = null; }
+  try {
+    viewer = createViewer(box);
+    box.dataset.mounted = '1';
+  } catch (err) {
+    const msg = document.getElementById('v3dMsg');
+    if (msg) msg.innerHTML = '⚠️ 3D sahne başlatılamadı. Tarayıcın WebGL desteklemiyor olabilir.';
+  }
+}
+function createViewer(box) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  box.appendChild(renderer.domElement);
+  const oldMsg = document.getElementById('v3dMsg'); if (oldMsg) oldMsg.remove();
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+  scene.add(new THREE.HemisphereLight(0xbfd6ff, 0x0b1220, .5));
+  const dirL = new THREE.DirectionalLight(0xffffff, 1.1); dirL.position.set(80, 120, 160); scene.add(dirL);
+
+  const camera = new THREE.PerspectiveCamera(42, 1, 1, 5000);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = .08;
+  controls.autoRotateSpeed = 1.6;
+
+  const P = { z1: 14, z2: 28 };
+  let model = null, modelKey = 'spur', speed = 1, paused = false, raf = 0, stopped = false;
+
+  function fitCamera() {
+    const sphere = new THREE.Box3().setFromObject(model.group).getBoundingSphere(new THREE.Sphere());
+    controls.target.copy(sphere.center);
+    const dist = sphere.radius * 2.7;
+    camera.position.copy(sphere.center).add(new THREE.Vector3(.55, .4, 1).normalize().multiplyScalar(dist));
+    camera.near = dist / 100; camera.far = dist * 20;
+    camera.updateProjectionMatrix();
+    controls.update();
+  }
+  function setModel(key) {
+    modelKey = key;
+    if (model) { scene.remove(model.group); disposeDeep(model.group); }
+    model = BUILDERS[key](P);
+    scene.add(model.group);
+    fitCamera();
+    const info = document.getElementById('v3dInfo'); if (info) info.innerHTML = model.info;
+    const gc = document.getElementById('v3dGearCtl');
+    if (gc) gc.style.display = (key === 'spur' || key === 'helical') ? 'inline-flex' : 'none';
+  }
+
+  /* kontroller */
+  document.querySelectorAll('#v3dSeg button').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('#v3dSeg button').forEach(x => x.classList.toggle('on', x === b));
+      setModel(b.dataset.model);
+    };
+  });
+  const spd = document.getElementById('v3dSpeed');
+  if (spd) spd.oninput = () => { speed = parseFloat(spd.value); };
+  const pauseBtn = document.getElementById('v3dPause');
+  if (pauseBtn) pauseBtn.onclick = () => {
+    paused = !paused;
+    pauseBtn.textContent = paused ? '▶ Çalıştır' : '⏸ Durdur';
+  };
+  const autoBtn = document.getElementById('v3dAuto');
+  if (autoBtn) autoBtn.onclick = () => {
+    controls.autoRotate = !controls.autoRotate;
+    autoBtn.style.background = controls.autoRotate ? 'var(--primary)' : '';
+    autoBtn.style.color = controls.autoRotate ? '#fff' : '';
+  };
+  [['v3dZ1', 'z1', 'v3dZ1v'], ['v3dZ2', 'z2', 'v3dZ2v']].forEach(([id, k, lid]) => {
+    const el = document.getElementById(id);
+    if (el) el.oninput = () => {
+      P[k] = parseInt(el.value, 10);
+      const l = document.getElementById(lid); if (l) l.textContent = P[k];
+      if (modelKey === 'spur' || modelKey === 'helical') setModel(modelKey);
+    };
+  });
+
+  /* boyutlandırma */
+  function resize() {
+    const w = box.clientWidth, hgt = box.clientHeight;
+    if (!w || !hgt) return;
+    renderer.setSize(w, hgt);
+    camera.aspect = w / hgt;
+    camera.updateProjectionMatrix();
+  }
+  const ro = new ResizeObserver(resize);
+  ro.observe(box);
+  resize();
+
+  /* döngü */
+  const clock = new THREE.Clock();
+  function loop() {
+    if (stopped) return;
+    if (!box.isConnected) { dispose(); return; }   // sayfadan ayrılınca kendini kapat
+    raf = requestAnimationFrame(loop);
+    const dt = Math.min(clock.getDelta(), .05);
+    if (!paused && model) model.update(dt, speed);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  function dispose() {
+    stopped = true;
+    cancelAnimationFrame(raf);
+    ro.disconnect();
+    controls.dispose();
+    if (model) disposeDeep(model.group);
+    pmrem.dispose();
+    renderer.dispose();
+    renderer.domElement.remove();
+    if (viewer && viewer.box === box) viewer = null;
+  }
+  setModel('spur');
+  loop();
+  return { dispose, box };
+}
+
+/* ---------- Giriş ekranı 3D sahnesi ---------- */
+let introScene = null;
+function introStart() {
+  const canvas = document.getElementById('intro3d');
+  const introEl = document.getElementById('intro');
+  if (!canvas || !introEl || introEl.classList.contains('hide')) return;
+  try {
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    const scene = new THREE.Scene();
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+    scene.fog = new THREE.Fog(0x0b1220, 380, 900);
+    scene.add(new THREE.HemisphereLight(0x6ea8ff, 0x0b1220, .7));
+    const p1 = new THREE.PointLight(0x7c3aed, 30000); p1.position.set(-160, 90, 120); scene.add(p1);
+    const p2 = new THREE.PointLight(0x22d3ee, 22000); p2.position.set(180, -70, 90); scene.add(p2);
+
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 1, 2000);
+    camera.position.z = 300;
+
+    const grp = new THREE.Group(); scene.add(grp);
+    const gearDefs = [
+      { z: 22, m: 7,  x: -190, y: 95,  zz: -120, mat: MAT.dark(),  sp: .22 },
+      { z: 14, m: 6,  x: 205,  y: 120, zz: -60,  mat: MAT.steel(), sp: -.4 },
+      { z: 30, m: 8,  x: 235,  y: -115, zz: -170, mat: MAT.dark(),  sp: .14 },
+      { z: 12, m: 5,  x: -235, y: -105, zz: -40,  mat: MAT.brass(), sp: -.55 },
+      { z: 18, m: 5,  x: -60,  y: 175, zz: -200, mat: MAT.steel(), sp: .3 },
+      { z: 16, m: 4.5, x: 60,  y: -180, zz: -90, mat: MAT.blue(),  sp: -.35 },
+    ];
+    const gears = gearDefs.map(d => {
+      const gm = gearMesh(d.z, d.m, d.m * 2.6, d.mat);
+      gm.material.envMapIntensity = .7;
+      gm.position.set(d.x, d.y, d.zz);
+      gm.rotation.x = (Math.random() - .5) * .7;
+      gm.userData.sp = d.sp;
+      grp.add(gm);
+      return gm;
+    });
+    /* parçacıklar */
+    const NP = 260, pos = new Float32Array(NP * 3);
+    for (let i = 0; i < NP; i++) {
+      pos[i * 3] = (Math.random() - .5) * 900;
+      pos[i * 3 + 1] = (Math.random() - .5) * 560;
+      pos[i * 3 + 2] = (Math.random() - .5) * 500 - 80;
+    }
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pts = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xa78bfa, size: 2.2, transparent: true, opacity: .65, sizeAttenuation: true }));
+    scene.add(pts);
+
+    let mx = 0, my = 0, raf = 0, stopped = false;
+    const onMove = (e) => {
+      mx = (e.clientX / innerWidth - .5);
+      my = (e.clientY / innerHeight - .5);
+    };
+    addEventListener('pointermove', onMove);
+    const onResize = () => {
+      renderer.setSize(innerWidth, innerHeight, false);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    };
+    addEventListener('resize', onResize);
+    onResize();
+
+    const clock = new THREE.Clock();
+    function loop() {
+      if (stopped) return;
+      raf = requestAnimationFrame(loop);
+      const dt = Math.min(clock.getDelta(), .05);
+      const t = clock.elapsedTime;
+      gears.forEach((gm, i) => {
+        gm.rotation.z += gm.userData.sp * dt;
+        gm.position.y += Math.sin(t * .5 + i * 1.7) * .06;
+      });
+      pts.rotation.y += dt * .012;
+      grp.rotation.y += (mx * .3 - grp.rotation.y) * .04;
+      grp.rotation.x += (-my * .2 - grp.rotation.x) * .04;
+      renderer.render(scene, camera);
+    }
+    loop();
+    introScene = {
+      stop() {
+        stopped = true;
+        cancelAnimationFrame(raf);
+        removeEventListener('pointermove', onMove);
+        removeEventListener('resize', onResize);
+        disposeDeep(scene);
+        pGeo.dispose();
+        pmrem.dispose();
+        renderer.dispose();
+      }
+    };
+  } catch (err) { /* WebGL yoksa gradyan arka plan yeterli */ }
+}
+
+/* ---------- Site geneli 3D arka plan ---------- */
+function bgStart() {
+  const canvas = document.getElementById('bg3d');
+  if (!canvas) return;
+  try {
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    const scene = new THREE.Scene();
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+    scene.add(new THREE.HemisphereLight(0x8fa3ff, 0x0b1020, .55));
+    const pl = new THREE.PointLight(0x7c3aed, 26000); pl.position.set(-180, 160, 140); scene.add(pl);
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 1, 2200);
+    camera.position.z = 340;
+
+    const grp = new THREE.Group(); scene.add(grp);
+    const defs = [
+      { z: 26, m: 8, x: -430, y: 170,  zz: -280, sp: .1,   c: 0x46536f },
+      { z: 16, m: 6, x: 450,  y: 230,  zz: -170, sp: -.16, c: 0x5b6b8c },
+      { z: 20, m: 7, x: 470,  y: -210, zz: -240, sp: .12,  c: 0x6d54c9 },
+      { z: 12, m: 5, x: -450, y: -240, zz: -130, sp: -.2,  c: 0x3d4a63 },
+      { z: 34, m: 9, x: -30,  y: -360, zz: -420, sp: .07,  c: 0x46536f },
+      { z: 14, m: 5, x: 40,   y: 330,  zz: -360, sp: -.13, c: 0x527086 },
+    ];
+    const gears = defs.map((d, i) => {
+      const gm = gearMesh(d.z, d.m, d.m * 2.4, new THREE.MeshStandardMaterial({ color: d.c, metalness: .9, roughness: .5 }));
+      gm.material.envMapIntensity = .55;
+      gm.position.set(d.x, d.y, d.zz);
+      gm.rotation.x = (i % 2 ? -1 : 1) * .35;
+      gm.userData.sp = d.sp;
+      grp.add(gm);
+      return gm;
+    });
+    const NP = 150, pos = new Float32Array(NP * 3);
+    for (let i = 0; i < NP; i++) {
+      pos[i * 3] = (Math.random() - .5) * 1100;
+      pos[i * 3 + 1] = (Math.random() - .5) * 700;
+      pos[i * 3 + 2] = (Math.random() - .5) * 600 - 100;
+    }
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pts = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xa78bfa, size: 2, transparent: true, opacity: .5 }));
+    scene.add(pts);
+
+    let mx = 0, my = 0;
+    addEventListener('pointermove', (e) => {
+      mx = e.clientX / innerWidth - .5;
+      my = e.clientY / innerHeight - .5;
+    });
+    const onResize = () => {
+      renderer.setSize(innerWidth, innerHeight, false);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    };
+    addEventListener('resize', onResize);
+    onResize();
+
+    const clock = new THREE.Clock();
+    (function loop() {
+      requestAnimationFrame(loop);
+      const dt = Math.min(clock.getDelta(), .05);
+      const t = clock.elapsedTime;
+      gears.forEach((gm, i) => {
+        gm.rotation.z += gm.userData.sp * dt;
+        gm.position.y += Math.sin(t * .4 + i * 1.9) * .04;
+      });
+      pts.rotation.y += dt * .01;
+      grp.rotation.y += (mx * .16 - grp.rotation.y) * .03;
+      grp.rotation.x += (-my * .1 - grp.rotation.x) * .03;
+      grp.position.y = (window.scrollY || 0) * .05;
+      renderer.render(scene, camera);
+    })();
+  } catch (err) { /* WebGL yoksa degrade arka plan kalır */ }
+}
+
+let bgStarted = false;
+function bgStartOnce() { if (!bgStarted) { bgStarted = true; bgStart(); } }
+
+window.MH3D = {
+  mount: mountViewer,
+  introStop() {
+    if (introScene) { introScene.stop(); introScene = null; }
+    bgStartOnce();   // ağır intro sahnesi kapanınca hafif arka plan sahnesi devralır
+  },
+};
+
+/* modül yüklendiğinde: intro açıksa onu, kapalıysa arka planı başlat; 3D Atölye açıksa bağla */
+const introEl0 = document.getElementById('intro');
+if (introEl0 && !introEl0.classList.contains('hide')) introStart();
+else bgStartOnce();
+if (document.getElementById('v3dBox')) mountViewer();
 </script>
 </body>
 </html>

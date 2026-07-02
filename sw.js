@@ -1,10 +1,14 @@
 /* MakineHesap — Servis Çalışanı (çevrimdışı destek) */
-const CACHE = 'makinehesap-v8';
+const CACHE = 'makinehesap-v10';
 const ASSETS = [
   'index.html',
   'manifest.json',
   'icon-192.png',
   'icon-512.png',
+  // 3D motor (Three.js) — çevrimdışında da çalışsın
+  'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js',
+  'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js',
+  'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/environments/RoomEnvironment.js',
 ];
 
 // Kurulum: dosyaları önbelleğe al
