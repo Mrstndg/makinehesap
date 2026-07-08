@@ -425,7 +425,7 @@
   /* ---------- Şema (güç aktarım) ---------- */
   .s-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
   .s-toolbar .lbl { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .05em; }
-  .s-addbtn { border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: var(--font); }
+  .s-addbtn { border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 7px 10px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 12.5px; font-family: var(--font); }
   .s-addbtn:hover { border-color: var(--primary); color: var(--primary); }
   .s-wrap { position: relative; }
   .s-canvas { position: relative; height: 520px; overflow: auto;
@@ -447,7 +447,10 @@
   .s-p input:focus { outline: none; border-color: var(--primary); }
   .s-res { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 12px; line-height: 1.55; color: var(--text-soft); }
   .s-res b { color: var(--primary); font-size: 13.5px; }
-  .s-calcbtn { position: absolute; right: 16px; bottom: 16px; z-index: 20; flex: 0 0 auto; padding: 14px 26px; box-shadow: 0 10px 26px rgba(37,99,235,.45); }
+  .s-fixedbar { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 600;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; align-items: center;
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 8px 12px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.35); max-width: calc(100vw - 24px); }
   .s-edgemenu { position: absolute; z-index: 30; display: none; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 5px; box-shadow: var(--shadow); }
   .s-edgemenu button { border: none; background: var(--surface); border-radius: 7px; padding: 6px 9px; cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text); font-family: var(--font); }
   .s-edgemenu button:hover { background: var(--primary); color: #fff; }
@@ -1829,13 +1832,21 @@ function cetvelBindHandles() {
 /* =======================  GÜÇ AKTARIM ŞEMASI  ======================= */
 const S_TYPES = {
   motor:  { ico: '⚡', name: 'Motor', color: '#f59e0b', params: [
-    { id: 'ad', t: 'text', label: 'Ad / model', def: 'GS12 DC' },
+    { id: 'ad', t: 'text', label: 'Ad / model', def: 'DC Motor' },
     { id: 'n',  label: 'Devir (d/dak)', def: '30' },
     { id: 'M',  label: 'Tork N·mm (isteğe bağlı)', def: '' },
   ]},
   disli:  { ico: '⚙️', name: 'Dişli', color: '#2563eb', params: [
     { id: 'z', label: 'Diş sayısı', def: '30' },
     { id: 'd', label: 'Çap mm (isteğe bağlı)', def: '' },
+  ]},
+  konik:  { ico: '🔺', name: 'Konik dişli', color: '#1d4ed8', params: [
+    { id: 'z', label: 'Diş sayısı', def: '20' },
+    { id: 'd', label: 'Çap mm (isteğe bağlı)', def: '' },
+  ]},
+  sonsuz: { ico: '🌪️', name: 'Sonsuz vida', color: '#dc2626', params: [
+    { id: 'ag', label: 'Ağız sayısı', def: '1' },
+    { id: 'd',  label: 'Çap mm (isteğe bağlı)', def: '' },
   ]},
   kasnak: { ico: '🛞', name: 'Kasnak', color: '#0ea5e9', params: [
     { id: 'd', label: 'Çap (mm)', def: '60' },
@@ -1844,9 +1855,38 @@ const S_TYPES = {
     { id: 'z', label: 'Diş sayısı', def: '18' },
     { id: 'p', label: 'Adım mm (isteğe bağlı)', def: '' },
   ]},
+  mil:    { ico: '➖', name: 'Mil / Şaft', color: '#64748b', params: [
+    { id: 'd', label: 'Çap (mm)', def: '10' },
+    { id: 'L', label: 'Boy mm (isteğe bağlı)', def: '' },
+  ]},
+  kaplin: { ico: '🧲', name: 'Kaplin', color: '#e11d48', params: [
+    { id: 'Mmax', label: 'Maks. tork N·mm (isteğe bağlı)', def: '' },
+  ]},
   vida:   { ico: '🔩', name: 'Vidalı mil', color: '#8b5cf6', params: [
     { id: 'Ph', label: 'Hatve (mm/dev)', def: '1' },
     { id: 'ds', label: 'Şırınga çapı mm (isteğe bağlı)', def: '' },
+  ]},
+  vidasomun: { ico: '🪛', name: 'Vida–Somun', color: '#7c3aed', params: [
+    { id: 'd',   label: 'Dış çap (mm)', def: '8' },
+    { id: 'dic', label: 'İç çap (mm)', def: '6.6' },
+    { id: 'P',   label: 'Adım (mm)', def: '1.25' },
+    { id: 'ag',  label: 'Ağız sayısı', def: '1' },
+  ]},
+  difvida: { ico: '🧬', name: 'Diferansiyel vida', color: '#a855f7', params: [
+    { id: 'Ph1', label: 'Büyük adım (mm)', def: '1.5' },
+    { id: 'Ph2', label: 'Küçük adım (mm)', def: '1.25' },
+  ]},
+  kremayer: { ico: '🛤️', name: 'Kremayer', color: '#f97316', params: [
+    { id: 'L', label: 'Boy mm (isteğe bağlı)', def: '' },
+  ]},
+  piston: { ico: '🔘', name: 'Piston', color: '#0891b2', params: [
+    { id: 'd', label: 'Çap (mm)', def: '9' },
+    { id: 't', label: 'Kalınlık (mm)', def: '5' },
+  ]},
+  hazne:  { ico: '🛢️', name: 'Hazne / Silindir', color: '#059669', params: [
+    { id: 'Dd', label: 'Dış çap (mm)', def: '12' },
+    { id: 'et', label: 'Et kalınlığı (mm)', def: '1' },
+    { id: 'L',  label: 'Boy (mm)', def: '60' },
   ]},
 };
 
@@ -1881,27 +1921,29 @@ function semaHTML() {
       <span class="lbl">EKLE:</span>
       ${addBtns}
       <span style="flex:1"></span>
-      <div class="k-seg" id="sModeSeg">
-        <button data-m="move">🖐 Taşı</button>
-        <button data-m="link">🔗 Bağla</button>
-      </div>
-      <button class="s-addbtn" onclick="sExample()">🧪 Örnek: İnsülin Pompası</button>
+      <button class="s-addbtn" onclick="sExample()">🧪 Örnek Şema</button>
       <button class="s-addbtn" onclick="sClear()">🗑 Temizle</button>
     </div>
     <div class="s-wrap">
       <div class="s-canvas" id="sCanvas"><div class="s-inner" id="sInner"></div></div>
-      <button class="btn btn-primary s-calcbtn" onclick="sCalc()">⚡ Hesapla</button>
     </div>
     <div class="s-help">
       ① Yukarıdan eleman ekle, <b>🖐 Taşı</b> modunda kutuları sürükle &nbsp;·&nbsp;
       ② <b>🔗 Bağla</b> moduna geç: önce <b>döndüren</b>, sonra <b>döndürülen</b> kutuya tıkla &nbsp;·&nbsp;
       ③ Oka tıklayıp türünü değiştir: <b style="color:#2563eb">⚙ kavrama</b> = dişliler birbirine geçmiş · <b style="color:#94a3b8">═ aynı mil</b> = birlikte döner &nbsp;·&nbsp;
-      ④ Sağ alttaki <b>⚡ Hesapla</b>'ya bas.
+      ④ Alttaki sabit çubuktan <b>⚡ Hesapla</b>'ya bas.
     </div>
   </div>
   <div class="card" style="margin-top:18px;">
     <h3><span class="dot"></span> Sonuçlar</h3>
     <div id="sSummary"><div class="empty">Şemayı kur ve <b>⚡ Hesapla</b>'ya bas.<br>Her kutunun devri, yönü ve dozajı burada + kutuların içinde görünecek. 👇</div></div>
+  </div>
+  <div class="s-fixedbar">
+    <div class="k-seg" id="sModeSeg">
+      <button data-m="move">🖐 Taşı</button>
+      <button data-m="link">🔗 Bağla</button>
+    </div>
+    <button class="btn btn-primary" style="flex:0 0 auto; padding:12px 26px;" onclick="sCalc()">⚡ Hesapla</button>
   </div>`;
 }
 
@@ -1947,17 +1989,21 @@ function sClear() {
 }
 function sExample() {
   sN = [
-    { id: 1, type: 'motor', x: 40,  y: 80, params: { ad: 'GS12 DC', n: '30', M: '' } },
-    { id: 2, type: 'disli', x: 300, y: 80, params: { z: '10', d: '10' } },
-    { id: 3, type: 'disli', x: 560, y: 80, params: { z: '30', d: '15' } },
-    { id: 4, type: 'vida',  x: 820, y: 80, params: { Ph: '1', ds: '10' } },
+    { id: 1, type: 'motor',  x: 40,   y: 80,  params: { ad: 'DC Motor', n: '30', M: '' } },
+    { id: 2, type: 'disli',  x: 280,  y: 80,  params: { z: '10', d: '10' } },
+    { id: 3, type: 'disli',  x: 520,  y: 80,  params: { z: '30', d: '15' } },
+    { id: 4, type: 'vida',   x: 760,  y: 80,  params: { Ph: '1', ds: '' } },
+    { id: 5, type: 'piston', x: 1000, y: 80,  params: { d: '9', t: '5' } },
+    { id: 6, type: 'hazne',  x: 1240, y: 80,  params: { Dd: '12', et: '1', L: '60' } },
   ];
   sE = [
     { from: 1, to: 2, kind: 'shaft' },
     { from: 2, to: 3, kind: 'mesh' },
     { from: 3, to: 4, kind: 'shaft' },
+    { from: 4, to: 5, kind: 'shaft' },
+    { from: 5, to: 6, kind: 'shaft' },
   ];
-  sNext = 5; sLinkSrc = null; sHideMenu(); sSave(); sRenderAll(); sCalc();
+  sNext = 7; sLinkSrc = null; sHideMenu(); sSave(); sRenderAll(); sCalc();
 }
 
 /* ---- çizim ---- */
@@ -2028,8 +2074,11 @@ function sLinkClick(id) {
   sLinkSrc = null; sSave(); sRenderAll();
 }
 function sDefaultKind(a, b) {
-  const meshable = ['disli', 'kasnak', 'zincir'];
-  return (a.type === b.type && meshable.includes(a.type)) ? 'mesh' : 'shaft';
+  const meshable = ['disli', 'kasnak', 'zincir', 'konik'];
+  if (a.type === b.type && meshable.includes(a.type)) return 'mesh';
+  if (a.type === 'sonsuz' && b.type === 'disli') return 'mesh';
+  if (a.type === 'disli' && b.type === 'kremayer') return 'mesh';
+  return 'shaft';
 }
 function sRectOf(id) {
   const el = document.querySelector(`.s-node[data-id="${id}"]`);
@@ -2086,24 +2135,154 @@ function sDelEdge() { if (sSelEdge != null) sE.splice(sSelEdge, 1); sHideMenu();
 
 /* ---- hesap ---- */
 function sPropagate(ru, u, v, e, warns) {
-  if (e.kind === 'shaft') return { n: ru.n, dir: ru.dir, M: ru.M };
+  if (e.kind === 'shaft') return { n: ru.n, dir: ru.dir, M: ru.M, lin: ru.lin, Q: ru.Q };
+  if (ru.n == null) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kavrama için dönme hızı gerekli (buraya dönme ulaşmıyor).`); return null; }
   const zu = sNum(u.params.z), zv = sNum(v.params.z);
   const du = sNum(u.params.d), dv = sNum(v.params.d);
-  if (u.type === 'disli' && v.type === 'disli') {
+  const tu = u.type, tv = v.type;
+  if ((tu === 'disli' && tv === 'disli') || (tu === 'konik' && tv === 'konik')) {
     if (!(zu > 0 && zv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kavrama için iki dişlinin de diş sayısı gerekli.`); return null; }
-    return { n: ru.n * zu / zv, dir: -ru.dir, M: ru.M != null ? ru.M * zv / zu : null };
+    return { n: ru.n * zu / zv, dir: tu === 'disli' ? -ru.dir : ru.dir, M: ru.M != null ? ru.M * zv / zu : null };
   }
-  if (u.type === 'kasnak' && v.type === 'kasnak') {
+  if (tu === 'sonsuz' && tv === 'disli') {
+    const ag = sNum(u.params.ag);
+    if (!(ag > 0 && zv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: sonsuz vidanın ağız sayısı ve çarkın diş sayısı gerekli.`); return null; }
+    return { n: ru.n * ag / zv, dir: ru.dir, M: ru.M != null ? ru.M * zv / ag : null };
+  }
+  if (tu === 'disli' && tv === 'sonsuz') {
+    warns.push(`${sLabel(u)} → ${sLabel(v)}: sonsuz vida geriye doğru sürülemez (oto-kilit) — oka tıklayıp ⇄ ile yönü çevir.`);
+    return null;
+  }
+  if (tu === 'disli' && tv === 'kremayer') {
+    if (!(du > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kremayer için pinyon dişlinin çapı gerekli.`); return null; }
+    return { n: null, dir: ru.dir, M: null, lin: PI * du * ru.n };
+  }
+  if (tu === 'kasnak' && tv === 'kasnak') {
     if (!(du > 0 && dv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kayış bağlantısı için iki kasnağın da çapı gerekli.`); return null; }
     return { n: ru.n * du / dv, dir: ru.dir, M: ru.M != null ? ru.M * dv / du : null };
   }
-  if (u.type === 'zincir' && v.type === 'zincir') {
+  if (tu === 'zincir' && tv === 'zincir') {
     if (!(zu > 0 && zv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: zincir bağlantısı için iki dişlinin de diş sayısı gerekli.`); return null; }
     return { n: ru.n * zu / zv, dir: ru.dir, M: ru.M != null ? ru.M * zv / zu : null };
   }
   warns.push(`${sLabel(u)} → ${sLabel(v)}: bu ikili "kavrama" ile bağlanamaz — oka tıklayıp "═ Aynı mil" seç.`);
   return null;
 }
+/* elemanın kendine özgü çıktılarını hesaba işle (doğrusal hız, debi...) */
+function sAugment(nd, r) {
+  const P = nd.params;
+  if (nd.type === 'vida') {
+    const Ph = sNum(P.Ph);
+    if (Ph > 0 && r.n != null) r.lin = Ph * r.n;
+  } else if (nd.type === 'vidasomun') {
+    const p = sNum(P.P), ag = sNum(P.ag) || 1;
+    if (p > 0 && r.n != null) r.lin = p * ag * r.n;
+  } else if (nd.type === 'difvida') {
+    const a = sNum(P.Ph1), b = sNum(P.Ph2);
+    if (a != null && b != null && r.n != null) r.lin = (a - b) * r.n;
+  } else if (nd.type === 'kremayer') {
+    r.n = null;
+  } else if (nd.type === 'piston') {
+    const d = sNum(P.d);
+    if (d > 0 && r.lin != null) r.Q = PI / 4 * d * d * r.lin / 1000;  // ml/dak
+    r.n = null;
+  } else if (nd.type === 'hazne') {
+    r.n = null;
+  }
+}
+function sResHTML(n, r) {
+  const P = n.params;
+  let h = '';
+  if (n.type === 'hazne') {
+    h = '';
+  } else if (r.n != null) {
+    h = `<b>${fmt(r.n, 3)} d/dak</b> ${r.dir > 0 ? '↻' : '↺'}`;
+    if (r.M != null) h += ` · M = ${fmt(r.M, 1)} N·mm`;
+  } else if (r.lin != null) {
+    h = `<b>${fmt(r.lin, 3)} mm/dak</b> doğrusal`;
+  } else if (r.Q != null) {
+    h = `<b>${fmt(r.Q, 4)} ml/dak</b>`;
+  }
+  const dd = sNum(P.d);
+  if ((n.type === 'disli' || n.type === 'konik' || n.type === 'kasnak') && dd > 0 && r.n != null) {
+    h += `<br>çevresel hız: ${fmt(PI * dd * r.n / 60000, 4)} m/s`;
+  }
+  if (n.type === 'zincir') {
+    const z = sNum(P.z), p = sNum(P.p);
+    if (z > 0 && p > 0 && r.n != null) {
+      const d0 = p / Math.sin(PI / z);
+      h += `<br>d₀ = ${fmt(d0, 2)} mm · zincir hızı: ${fmt(PI * d0 * r.n / 60000, 4)} m/s`;
+    }
+  }
+  if (n.type === 'sonsuz' && r.n != null) {
+    const ag = sNum(P.ag);
+    if (ag > 0) h += `<br>1 devirde çarkı ${fmt(ag, 0)} diş döndürür`;
+  }
+  if (n.type === 'mil') {
+    const L = sNum(P.L);
+    if (dd > 0 && r.M != null) h += `<br>burulma: τ = ${fmt(16 * r.M / (PI * dd * dd * dd), 2)} N/mm²`;
+    if (L > 0) h += `<br>boy: ${fmt(L, 1)} mm`;
+  }
+  if (n.type === 'kaplin' && r.M != null) {
+    const Mmax = sNum(P.Mmax);
+    if (Mmax > 0) h += r.M > Mmax
+      ? `<br><span style="color:#ef4444;">⚠ tork aşımı! ${fmt(r.M, 1)} &gt; ${fmt(Mmax, 1)} N·mm</span>`
+      : `<br>✓ tork uygun (${fmt(r.M, 1)} ≤ ${fmt(Mmax, 1)} N·mm)`;
+  }
+  if (n.type === 'vida') {
+    const Ph = sNum(P.Ph), ds = sNum(P.ds);
+    if (Ph > 0 && r.n != null) {
+      h += `<br>ilerleme: ${fmt(Ph, 3)} mm/dev · <b>${fmt(Ph * r.n, 3)} mm/dak</b>`;
+      if (ds > 0) {
+        const qml = PI / 4 * ds * ds * Ph / 1000;
+        h += `<br>💧 dozaj: ${fmt(qml, 4)} ml/dev · ${fmt(qml * r.n, 4)} ml/dak · <b>${fmt(qml * r.n * 60, 3)} ml/saat</b>`;
+      }
+    }
+  }
+  if (n.type === 'vidasomun' && r.n != null) {
+    const p = sNum(P.P), ag = sNum(P.ag) || 1, dic = sNum(P.dic);
+    if (p > 0) {
+      const Ph = p * ag;
+      h += `<br>hatve: ${fmt(Ph, 3)} mm/dev · somun hızı: <b>${fmt(Ph * r.n, 3)} mm/dak</b>`;
+      if (dd > 0 && dic > 0) {
+        const d2 = (dd + dic) / 2;
+        h += `<br>d₂ = ${fmt(d2, 2)} mm · helis açısı β = ${fmt(Math.atan(Ph / (PI * d2)) * 180 / PI, 2)}°`;
+      }
+    }
+  }
+  if (n.type === 'difvida' && r.n != null) {
+    const a = sNum(P.Ph1), b = sNum(P.Ph2);
+    if (a != null && b != null) {
+      h += `<br>net ilerleme: <b>${fmt(a - b, 3)} mm/dev</b> · ${fmt((a - b) * r.n, 4)} mm/dak`;
+      h += `<br>🎯 hassas hareket (${fmt(a, 2)} − ${fmt(b, 2)})`;
+    }
+  }
+  if (n.type === 'kremayer' && r.lin != null) {
+    h += `<br>${fmt(r.lin / 60000, 4)} m/s doğrusal hız`;
+  }
+  if (n.type === 'piston') {
+    if (dd > 0) h += `<br>alan: ${fmt(PI / 4 * dd * dd, 2)} mm²`;
+    if (r.Q != null) h += `<br>💧 debi: <b>${fmt(r.Q, 4)} ml/dak</b> · ${fmt(r.Q * 60, 3)} ml/saat`;
+  }
+  if (n.type === 'hazne') {
+    const Dd = sNum(P.Dd), et = sNum(P.et), L = sNum(P.L);
+    if (Dd > 0 && et != null && L > 0) {
+      const Di = Dd - 2 * et;
+      if (Di > 0) {
+        const V = PI / 4 * Di * Di * L / 1000;   // ml
+        h += `<br>iç çap: ${fmt(Di, 2)} mm · hacim: <b>${fmt(V, 3)} ml</b>`;
+        if (r.Q > 0) {
+          const dk = V / r.Q;
+          h += `<br>⏱ dolum/boşalma: <b>${fmt(dk, 1)} dak</b> (${fmt(dk / 60, 2)} saat)`;
+        }
+      } else {
+        h += `<br><span style="color:#ef4444;">⚠ et kalınlığı çapa göre çok büyük</span>`;
+      }
+    }
+  }
+  return h || '—';
+}
+
 function sCalc() {
   const warns = [], res = {};
   const sum = document.getElementById('sSummary');
@@ -2125,10 +2304,12 @@ function sCalc() {
       const r = sPropagate(res[u.id], u, v, e, warns);
       if (!r) continue;
       if (res[v.id]) {
-        if (Math.abs(res[v.id].n - r.n) > 1e-6)
-          warns.push(`${sLabel(v)}: iki farklı hız geliyor (${fmt(res[v.id].n, 3)} ve ${fmt(r.n, 3)} d/dak) — bağlantıları kontrol et.`);
+        const eski = res[v.id].n, yeni = r.n;
+        if (eski != null && yeni != null && Math.abs(eski - yeni) > 1e-6)
+          warns.push(`${sLabel(v)}: iki farklı hız geliyor (${fmt(eski, 3)} ve ${fmt(yeni, 3)} d/dak) — bağlantıları kontrol et.`);
         continue;
       }
+      sAugment(v, r);
       res[v.id] = r;
       q.push(v);
     }
@@ -2143,30 +2324,7 @@ function sCalc() {
       if (n.type !== 'motor') warns.push(`${sLabel(n)}: motor zincirine bağlı değil.`);
       continue;
     }
-    let h = `<b>${fmt(r.n, 3)} d/dak</b> ${r.dir > 0 ? '↻' : '↺'}`;
-    if (r.M != null) h += ` · M = ${fmt(r.M, 1)} N·mm`;
-    const dd = sNum(n.params.d);
-    if ((n.type === 'disli' || n.type === 'kasnak') && dd > 0) {
-      h += `<br>çevresel hız: ${fmt(PI * dd * r.n / 60000, 4)} m/s`;
-    }
-    if (n.type === 'zincir') {
-      const z = sNum(n.params.z), p = sNum(n.params.p);
-      if (z > 0 && p > 0) {
-        const d0 = p / Math.sin(PI / z);
-        h += `<br>d₀ = ${fmt(d0, 2)} mm · zincir hızı: ${fmt(PI * d0 * r.n / 60000, 4)} m/s`;
-      }
-    }
-    if (n.type === 'vida') {
-      const Ph = sNum(n.params.Ph), ds = sNum(n.params.ds);
-      if (Ph > 0) {
-        h += `<br>ilerleme: ${fmt(Ph, 3)} mm/dev · <b>${fmt(Ph * r.n, 3)} mm/dak</b>`;
-        if (ds > 0) {
-          const qml = PI / 4 * ds * ds * Ph / 1000;   // ml/dev
-          h += `<br>💧 dozaj: ${fmt(qml, 4)} ml/dev · ${fmt(qml * r.n, 4)} ml/dak · <b>${fmt(qml * r.n * 60, 3)} ml/saat</b>`;
-        }
-      }
-    }
-    el.innerHTML = h;
+    el.innerHTML = sResHTML(n, r);
   }
   /* özet panel */
   if (!sum) return;
@@ -2174,24 +2332,47 @@ function sCalc() {
   for (const w of warns) h += `<div class="err" style="margin-bottom:8px;">⚠️ ${w}</div>`;
   for (const n of sN) {
     const r = res[n.id];
+    let vt = '—', ut = '';
+    if (r) {
+      if (n.type === 'hazne' && r.Q != null) { vt = fmt(r.Q, 4); ut = 'ml/dak'; }
+      else if (r.n != null) { vt = fmt(r.n, 3); ut = 'd/dak ' + (r.dir > 0 ? '↻' : '↺'); }
+      else if (r.lin != null) { vt = fmt(r.lin, 3); ut = 'mm/dak'; }
+      else if (r.Q != null) { vt = fmt(r.Q, 4); ut = 'ml/dak'; }
+    }
     h += `<div class="result-row"><div class="r-label">${sLabel(n)}<small>${S_TYPES[n.type].name}</small></div>
-      <div class="r-val">${r ? fmt(r.n, 3) : '—'}<span>d/dak ${r ? (r.dir > 0 ? '↻' : '↺') : ''}</span></div></div>`;
+      <div class="r-val">${vt}<span>${ut}</span></div></div>`;
   }
   const m0 = motors.find(m => res[m.id]);
   if (m0) {
     const leaves = sN.filter(n => res[n.id] && n.id !== m0.id && !sE.some(e => e.from === n.id));
     for (const lf of leaves) {
-      const i = res[m0.id].n / res[lf.id].n;
-      h += `<div class="result-row highlight"><div class="r-label">Toplam iletim oranı<small>${sLabel(m0)} → ${sLabel(lf)}</small></div>
-        <div class="r-val">i = ${fmt(i, 3)}<span></span></div></div>`;
+      if (res[lf.id].n > 0) {
+        h += `<div class="result-row highlight"><div class="r-label">Toplam iletim oranı<small>${sLabel(m0)} → ${sLabel(lf)}</small></div>
+          <div class="r-val">i = ${fmt(res[m0.id].n / res[lf.id].n, 3)}<span></span></div></div>`;
+      }
     }
     for (const n of sN) {
-      if (n.type !== 'vida' || !res[n.id]) continue;
-      const Ph = sNum(n.params.Ph), ds = sNum(n.params.ds);
-      if (Ph > 0 && ds > 0) {
-        const qml = PI / 4 * ds * ds * Ph / 1000;
-        h += `<div class="result-row highlight"><div class="r-label">💧 Dozaj — ${sLabel(n)}<small>q = π/4·d²·Ph · n</small></div>
-          <div class="r-val">${fmt(qml * res[n.id].n * 60, 3)}<span>ml/saat</span></div></div>`;
+      const r = res[n.id];
+      if (!r) continue;
+      if (n.type === 'vida') {
+        const Ph = sNum(n.params.Ph), ds = sNum(n.params.ds);
+        if (Ph > 0 && ds > 0 && r.n != null) {
+          const qml = PI / 4 * ds * ds * Ph / 1000;
+          h += `<div class="result-row highlight"><div class="r-label">💧 Dozaj — ${sLabel(n)}<small>q = π/4·d²·Ph · n</small></div>
+            <div class="r-val">${fmt(qml * r.n * 60, 3)}<span>ml/saat</span></div></div>`;
+        }
+      }
+      if (n.type === 'piston' && r.Q != null) {
+        h += `<div class="result-row highlight"><div class="r-label">💧 Debi — ${sLabel(n)}<small>Q = A · v</small></div>
+          <div class="r-val">${fmt(r.Q * 60, 3)}<span>ml/saat</span></div></div>`;
+      }
+      if (n.type === 'hazne' && r.Q > 0) {
+        const Dd = sNum(n.params.Dd), et = sNum(n.params.et), L = sNum(n.params.L);
+        if (Dd > 0 && et != null && L > 0 && Dd - 2 * et > 0) {
+          const V = PI / 4 * (Dd - 2 * et) * (Dd - 2 * et) * L / 1000;
+          h += `<div class="result-row highlight"><div class="r-label">⏱ Dolum süresi — ${sLabel(n)}<small>t = V / Q</small></div>
+            <div class="r-val">${fmt(V / r.Q, 1)}<span>dak</span></div></div>`;
+        }
       }
     }
   }
