@@ -4,7 +4,17 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>MakineHesap · Makine Elemanları Hesaplama</title>
-<meta name="description" content="Makine elemanları ve mekanizmalar için kolay ve şık hesaplama uygulaması." />
+<meta name="description" content="Makine elemanları ve mekanizmalar için kolay ve şık hesaplama, simülasyon ve tasarım uygulaması. Dişli, kayış-kasnak, zincir, yay, rulman, civata, asansör, kumpas, güç aktarım şeması ve dozaj pompası ters tasarımı." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="gdntsrm.com" />
+<meta property="og:title" content="MakineHesap · Makine Elemanları Hesaplama & Tasarım" />
+<meta property="og:description" content="Dişli, kayış-kasnak, zincir, yay, rulman, civata, asansör hesapları + kumpas simülasyonu + güç aktarım şeması + dozaj pompası ters tasarımı. Türkçe, çevrimdışı çalışır." />
+<meta property="og:url" content="https://gdntsrm.com" />
+<meta property="og:image" content="https://gdntsrm.com/icon-512.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="MakineHesap · gdntsrm.com" />
+<meta name="twitter:description" content="Makine elemanları hesaplama, simülasyon ve tasarım aracı." />
+<meta name="twitter:image" content="https://gdntsrm.com/icon-512.png" />
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#7c3aed" />
 <meta name="mobile-web-app-capable" content="yes" />
@@ -2074,6 +2084,7 @@ function sInit() {
     }
   });
   sRenderAll();
+  if (sN.length) sCalc();      // kayıtlı şema varsa açılışta hesapla (sonuç+animasyon)
 }
 function sModeUI() {
   document.querySelectorAll('#sModeSeg button').forEach(b =>
