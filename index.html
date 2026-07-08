@@ -991,6 +991,7 @@ const CALCS = {
       { id: 'ds', label: 'Şırınga iç çapı', sub: 'ds · yaygın: 5ml≈12 · 10ml≈15 · 20ml≈19 · 50ml≈27 mm', unit: 'mm', def: 15 },
       { id: 'Ph', label: 'Vida hatvesi', sub: 'Ph', unit: 'mm/dev', def: 1 },
       { id: 'z1', label: 'Temel pinyon diş sayısı', sub: 'z₁', unit: 'adet', def: 20 },
+      { id: 'pbar', label: 'Karşı basınç (motor kontrolü için, ops.)', sub: 'p', unit: 'bar', def: '' },
     ],
     compute: (v) => {
       const A = PI / 4 * v.ds * v.ds;                 // şırınga kesiti mm²
@@ -1019,6 +1020,18 @@ const CALCS = {
       ];
       if (L != null) rows.push({ label: 'Gerekli strok boyu', sub: `L = V·1000 / A  (V = ${fmt(v.V, 1)} ml)`, val: fmt(L, 1), unit: 'mm', hi: true });
       if (T != null) rows.push({ label: 'Boşaltma süresi', sub: 'T = V / Q', val: fmt(T, 2), unit: `saat (${fmt(T * 60, 0)} dak)` });
+      // Motor yeterlilik kontrolü: karşı basınca göre gereken tork/güç
+      if (typeof v.pbar === 'number' && v.pbar > 0 && v.Ph > 0 && iReal > 0) {
+        const etaS = 0.4, etaG = i > 8 ? 0.7 : 0.95;      // vida ve dişli verimi
+        const F = (v.pbar / 10) * A;                        // itme kuvveti [N] (1 bar=0.1 N/mm²)
+        const vlinMin = v.Ph * nScrewReal;                  // mm/dak
+        const Pout = F * vlinMin / 60000;                   // faydalı çıkış gücü [W]
+        const Pmotor = Pout / (etaS * etaG);                // gerekli motor gücü [W]
+        const Mmotor = v.n > 0 ? Pmotor * 1000 / (2 * PI * v.n / 60) : null;  // gerekli motor torku [N·mm]
+        rows.push({ label: 'Gereken itme kuvveti', sub: `F = (p/10)·A  ·  p = ${fmt(v.pbar, 1)} bar`, val: fmt(F, 1), unit: 'N', hi: true });
+        if (Mmotor != null) rows.push({ label: 'Gereken motor torku', sub: 'η_vida≈0,4 · η_dişli dahil', val: fmt(Mmotor, 1), unit: 'N·mm', hi: true });
+        rows.push({ label: 'Gereken motor gücü', sub: 'P = F·v / (η_vida·η_dişli)', val: fmt(Pmotor, 3), unit: 'W', hi: true });
+      }
       if (note) rows.push({ label: 'Alternatif', sub: note, val: 'ℹ️', unit: '' });
       return {
         rows,
@@ -1027,6 +1040,7 @@ const CALCS = {
           'i = n_motor / n_vida            (gerekli redüksiyon)',
           'z₂ = z₁ · i   ·   sonsuz vida: 1 ağız → i dişli',
           'L = V·1000 / (π/4·ds²)          (gerekli strok boyu)',
+          'F = (p/10)·A   ·   M_motor = P/ω   (basınç için motor kontrolü)',
         ]
       };
     }
