@@ -438,6 +438,8 @@
   .s-node { position: absolute; width: 190px; background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); z-index: 5; user-select: none; touch-action: none; }
   .s-node.link-src { outline: 3px solid var(--primary); outline-offset: 2px; }
   .s-node .s-head { display: flex; align-items: center; gap: 6px; color: #fff; font-weight: 800; font-size: 13px; padding: 7px 10px; border-radius: 10px 10px 0 0; cursor: grab; }
+  .s-ico { display: inline-block; transform-origin: 50% 50%; }
+  @keyframes sspin { to { transform: rotate(360deg); } }
   .s-node .s-x { margin-left: auto; cursor: pointer; opacity: .85; font-weight: 400; padding: 0 3px; }
   .s-node .s-x:hover { opacity: 1; transform: scale(1.15); }
   .s-body { padding: 8px 10px 10px; }
@@ -2073,7 +2075,7 @@ function sNodeHTML(n) {
     ps += `<div class="s-p"><label>${p.label}</label><input data-p="${p.id}" ${p.t === 'text' ? 'type="text"' : 'type="text" inputmode="decimal"'} value="${String(val).replace(/"/g, '&quot;')}" /></div>`;
   }
   return `<div class="s-node ${sLinkSrc === n.id ? 'link-src' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px;">
-    <div class="s-head" style="background:${t.color}">${t.ico} ${t.name} <span class="s-x" title="Sil">✕</span></div>
+    <div class="s-head" style="background:${t.color}"><span class="s-ico" id="sIco${n.id}">${t.ico}</span> ${t.name} <span class="s-x" title="Sil">✕</span></div>
     <div class="s-body">${ps}<div class="s-res" id="sRes${n.id}">— henüz hesaplanmadı</div></div>
   </div>`;
 }
@@ -2409,12 +2411,24 @@ function sCalc() {
     const el = document.getElementById('sRes' + n.id);
     if (!el) continue;
     const r = res[n.id];
+    const ico = document.getElementById('sIco' + n.id);
     if (!r) {
       el.innerHTML = '<span style="color:#ef4444;">— güç ulaşmıyor (bağlantı yok?)</span>';
+      if (ico) ico.style.animation = 'none';
       if (n.type !== 'motor') warns.push(`${sLabel(n)}: motor zincirine bağlı değil.`);
       continue;
     }
     el.innerHTML = sResHTML(n, r);
+    if (ico) {
+      const spinning = ['motor', 'disli', 'konik', 'sonsuz', 'kasnak', 'zincir', 'mil', 'vida', 'vidasomun', 'difvida', 'kaplin'].includes(n.type);
+      if (spinning && r.n != null && Math.abs(r.n) > 1e-9) {
+        const dur = Math.max(0.4, Math.min(6, 30 / Math.abs(r.n)));
+        ico.style.animation = `sspin ${dur.toFixed(2)}s linear infinite`;
+        ico.style.animationDirection = r.dir < 0 ? 'reverse' : 'normal';
+      } else {
+        ico.style.animation = 'none';
+      }
+    }
   }
   /* özet panel */
   if (!sum) return;
