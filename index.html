@@ -2017,6 +2017,9 @@ function semaHTML() {
       ${addBtns}
       <span style="flex:1"></span>
       <button class="s-addbtn" onclick="sExample()">🧪 Örnek Şema</button>
+      <button class="s-addbtn" onclick="sExport()">💾 Kaydet</button>
+      <button class="s-addbtn" onclick="document.getElementById('sImportFile').click()">📂 Yükle</button>
+      <input type="file" id="sImportFile" accept="application/json,.json" style="display:none" onchange="sImport(event)" />
       <button class="s-addbtn" onclick="sClear()">🗑 Temizle</button>
     </div>
     <div class="s-wrap">
@@ -2081,6 +2084,31 @@ function sClear() {
     const sum = document.getElementById('sSummary');
     if (sum) sum.innerHTML = '<div class="empty">Şemayı kur ve <b>⚡ Hesapla</b>\'ya bas. 👇</div>';
   }
+}
+function sExport() {
+  if (!sN.length) { alert('Önce bir şema kur.'); return; }
+  const data = JSON.stringify({ app: 'MakineHesap', tip: 'sema', v: 1, n: sN, e: sE, x: sNext }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'makinehesap-sema-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function sImport(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const o = JSON.parse(reader.result);
+      if (!o || !Array.isArray(o.n)) throw new Error('geçersiz');
+      sN = o.n; sE = Array.isArray(o.e) ? o.e : []; sNext = o.x || (sN.length + 1);
+      sLinkSrc = null; sHideMenu(); sSave(); sRenderAll(); sCalc();
+    } catch (err) { alert('Dosya okunamadı — geçerli bir MakineHesap şema (.json) dosyası seç.'); }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
 }
 function sExample() {
   sN = [
