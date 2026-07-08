@@ -1032,7 +1032,7 @@ const CALCS = {
       if (T != null) rows.push({ label: 'Boşaltma süresi', sub: 'T = V / Q', val: fmt(T, 2), unit: `saat (${fmt(T * 60, 0)} dak)` });
       // Motor yeterlilik kontrolü: karşı basınca göre gereken tork/güç
       if (typeof v.pbar === 'number' && v.pbar > 0 && v.Ph > 0 && iReal > 0) {
-        const etaS = 0.4, etaG = i > 8 ? 0.7 : 0.95;      // vida ve dişli verimi
+        const etaS = 0.4, etaG = i > 8 ? 0.70 : 0.97;     // vida ve dişli verimi (şema ile uyumlu)
         const F = (v.pbar / 10) * A;                        // itme kuvveti [N] (1 bar=0.1 N/mm²)
         const vlinMin = v.Ph * nScrewReal;                  // mm/dak
         const Pout = F * vlinMin / 60000;                   // faydalı çıkış gücü [W]
@@ -2594,12 +2594,23 @@ function terspompaToSchema() {
     alert('Önce geçerli değerler gir: hedef dozaj, motor devri, şırınga çapı, vida hatvesi ve pinyon diş sayısı.');
     return;
   }
+  const pbar = g('pbar');
   const A = PI / 4 * ds * ds;
   const nScrew = Q / (A * Ph / 1000 * 60);      // gerekli vida devri
   const i = n / nScrew;                          // gerekli redüksiyon
   const stroke = V > 0 ? V * 1000 / A : 60;
   const S = (x) => String(Math.round(x * 1000) / 1000);
-  const nodes = [{ id: 1, type: 'motor', x: 40, y: 90, params: { ad: 'Motor', n: S(n), M: '' } }];
+  // gerçekleşen oran (yuvarlanmış dişlerle) → basınç için motor torkunu geri hesapla
+  const iReal = i > 8 ? Math.max(1, Math.round(i)) : Math.max(1, Math.round(z1 * i)) / z1;
+  let motorM = '';
+  if (typeof pbar === 'number' && pbar > 0) {
+    const etaS = 0.4, etaG = i > 8 ? 0.70 : 0.97;   // şema verimleriyle uyumlu
+    const F = (pbar / 10) * A;                       // itme kuvveti [N]
+    const vlin = Ph * (n / iReal);                   // mm/dak
+    const Pmotor = (F * vlin / 60000) / (etaS * etaG);
+    motorM = S(Pmotor * 1000 / (2 * PI * n / 60));   // gerekli motor torku [N·mm]
+  }
+  const nodes = [{ id: 1, type: 'motor', x: 40, y: 90, params: { ad: 'Motor', n: S(n), M: motorM } }];
   const edges = [];
   let idx = 2, prev = 1, xx = 250;
   if (i > 8) {                                   // yüksek oran → sonsuz vida
