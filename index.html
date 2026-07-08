@@ -2240,12 +2240,13 @@ function sPropagate(ru, u, v, e, warns) {
     const mu = sNum(u.params.m), mv = sNum(v.params.m);
     if (mu > 0 && mv > 0 && Math.abs(mu - mv) > 1e-6)
       warns.push(`${sLabel(u)} → ${sLabel(v)}: kavrama için modüller eşit olmalı (${fmt(mu, 2)} ≠ ${fmt(mv, 2)} mm).`);
-    return { n: ru.n * zu / zv, dir: tu === 'disli' ? -ru.dir : ru.dir, M: ru.M != null ? ru.M * zv / zu : null };
+    const et = tu === 'disli' ? 0.97 : 0.96;
+    return { n: ru.n * zu / zv, dir: tu === 'disli' ? -ru.dir : ru.dir, M: ru.M != null ? ru.M * zv / zu * et : null };
   }
   if (tu === 'sonsuz' && tv === 'disli') {
     const ag = sNum(u.params.ag);
     if (!(ag > 0 && zv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: sonsuz vidanın ağız sayısı ve çarkın diş sayısı gerekli.`); return null; }
-    return { n: ru.n * ag / zv, dir: ru.dir, M: ru.M != null ? ru.M * zv / ag : null };
+    return { n: ru.n * ag / zv, dir: ru.dir, M: ru.M != null ? ru.M * zv / ag * 0.70 : null };
   }
   if (tu === 'disli' && tv === 'sonsuz') {
     warns.push(`${sLabel(u)} → ${sLabel(v)}: sonsuz vida geriye doğru sürülemez (oto-kilit) — oka tıklayıp ⇄ ile yönü çevir.`);
@@ -2259,11 +2260,11 @@ function sPropagate(ru, u, v, e, warns) {
   }
   if (tu === 'kasnak' && tv === 'kasnak') {
     if (!(du > 0 && dv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kayış bağlantısı için iki kasnağın da çapı gerekli.`); return null; }
-    return { n: ru.n * du / dv, dir: ru.dir, M: ru.M != null ? ru.M * dv / du : null };
+    return { n: ru.n * du / dv, dir: ru.dir, M: ru.M != null ? ru.M * dv / du * 0.95 : null };
   }
   if (tu === 'zincir' && tv === 'zincir') {
     if (!(zu > 0 && zv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: zincir bağlantısı için iki dişlinin de diş sayısı gerekli.`); return null; }
-    return { n: ru.n * zu / zv, dir: ru.dir, M: ru.M != null ? ru.M * zv / zu : null };
+    return { n: ru.n * zu / zv, dir: ru.dir, M: ru.M != null ? ru.M * zv / zu * 0.96 : null };
   }
   warns.push(`${sLabel(u)} → ${sLabel(v)}: bu ikili "kavrama" ile bağlanamaz — oka tıklayıp "═ Aynı mil" seç.`);
   return null;
@@ -2302,6 +2303,9 @@ function sResHTML(n, r) {
     h = `<b>${fmt(r.lin, 3)} mm/dak</b> doğrusal`;
   } else if (r.Q != null) {
     h = `<b>${fmt(r.Q, 4)} ml/dak</b>`;
+  }
+  if (r.M != null && r.n != null && Math.abs(r.n) > 1e-9) {
+    h += `<br>güç: <b>${fmt(Math.abs(r.M) * 2 * PI * Math.abs(r.n) / 60 / 1000, 3)} W</b>`;
   }
   const dd = sNum(P.d);
   if (n.type === 'disli' || n.type === 'konik') {
@@ -2354,6 +2358,11 @@ function sResHTML(n, r) {
       if (L > 0 && vlin > 0) {
         h += `<br>📏 strok ${fmt(L, 0)} mm → tam süre: <b>${fmt(L / vlin, 1)} dak</b>`;
         if (ds > 0) h += ` · toplam hacim: <b>${fmt(PI / 4 * ds * ds * L / 1000, 3)} ml</b>`;
+      }
+      if (r.M != null && Ph > 0) {                   // torku eksenel itme kuvvetine çevir
+        const F = 2 * PI * Math.abs(r.M) * 0.4 / Ph;  // η_vida ≈ 0.4 (kaba/emniyetli)
+        h += `<br>💪 itme kuvveti (η≈0,4): <b>${fmt(F, 1)} N</b>`;
+        if (ds > 0) { const pr = F / (PI / 4 * ds * ds); h += ` · basınç: ${fmt(pr, 3)} N/mm² (${fmt(pr * 10, 2)} bar)`; }
       }
     }
   }
@@ -2488,6 +2497,12 @@ function sCalc() {
       if (res[lf.id].n > 0) {
         h += `<div class="result-row highlight"><div class="r-label">Toplam iletim oranı<small>${sLabel(m0)} → ${sLabel(lf)}</small></div>
           <div class="r-val">i = ${fmt(res[m0.id].n / res[lf.id].n, 3)}<span></span></div></div>`;
+        const M0 = res[m0.id].M, Ml = res[lf.id].M;
+        if (M0 != null && Ml != null && M0 !== 0) {
+          const eta = Math.abs(Ml * res[lf.id].n) / Math.abs(M0 * res[m0.id].n);
+          h += `<div class="result-row"><div class="r-label">Toplam verim<small>kavrama kayıpları · η = P_çıkış / P_giriş</small></div>
+            <div class="r-val">%${fmt(eta * 100, 1)}<span></span></div></div>`;
+        }
       }
     }
     for (const n of sN) {
