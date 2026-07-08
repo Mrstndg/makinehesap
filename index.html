@@ -422,6 +422,37 @@
   .v3d-info { margin-top: 12px; }
   .tile { will-change: transform; }
 
+  /* ---------- Şema (güç aktarım) ---------- */
+  .s-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .s-toolbar .lbl { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: .05em; }
+  .s-addbtn { border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: var(--font); }
+  .s-addbtn:hover { border-color: var(--primary); color: var(--primary); }
+  .s-wrap { position: relative; }
+  .s-canvas { position: relative; height: 520px; overflow: auto;
+    background-color: var(--surface);
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 24px 24px;
+    border: 1px solid var(--border); border-radius: 14px; }
+  .s-inner { position: relative; width: 1600px; height: 1000px; }
+  .s-inner svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .s-node { position: absolute; width: 190px; background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); z-index: 5; user-select: none; touch-action: none; }
+  .s-node.link-src { outline: 3px solid var(--primary); outline-offset: 2px; }
+  .s-node .s-head { display: flex; align-items: center; gap: 6px; color: #fff; font-weight: 800; font-size: 13px; padding: 7px 10px; border-radius: 10px 10px 0 0; cursor: grab; }
+  .s-node .s-x { margin-left: auto; cursor: pointer; opacity: .85; font-weight: 400; padding: 0 3px; }
+  .s-node .s-x:hover { opacity: 1; transform: scale(1.15); }
+  .s-body { padding: 8px 10px 10px; }
+  .s-p { margin-bottom: 6px; }
+  .s-p label { display: block; font-size: 10.5px; color: var(--muted); font-weight: 700; margin-bottom: 2px; }
+  .s-p input { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px; font-family: var(--font); }
+  .s-p input:focus { outline: none; border-color: var(--primary); }
+  .s-res { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 12px; line-height: 1.55; color: var(--text-soft); }
+  .s-res b { color: var(--primary); font-size: 13.5px; }
+  .s-calcbtn { position: absolute; right: 16px; bottom: 16px; z-index: 20; flex: 0 0 auto; padding: 14px 26px; box-shadow: 0 10px 26px rgba(37,99,235,.45); }
+  .s-edgemenu { position: absolute; z-index: 30; display: none; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 5px; box-shadow: var(--shadow); }
+  .s-edgemenu button { border: none; background: var(--surface); border-radius: 7px; padding: 6px 9px; cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text); font-family: var(--font); }
+  .s-edgemenu button:hover { background: var(--primary); color: #fff; }
+  .s-help { font-size: 12.5px; color: var(--muted); line-height: 1.7; margin-top: 10px; }
+
   /* ---------- Sidebar footer ---------- */
   .side-foot { margin-top: 22px; padding: 14px 10px 4px; border-top: 1px solid var(--border); text-align: center; }
   .side-foot a { color: var(--primary); text-decoration: none; font-weight: 700; font-size: 13.5px; }
@@ -448,6 +479,7 @@
       <span>🔩 Bağlama</span>
       <span>📏 Kumpas</span>
       <span>🛗 Asansör</span>
+      <span>🧩 Şema</span>
     </div>
     <button class="intro-btn" onclick="enterApp()">Giriş Yap →</button>
     <a class="intro-site" href="https://gdntsrm.com" target="_blank" rel="noopener">🌐 gdntsrm.com</a>
@@ -910,6 +942,15 @@ const CALCS = {
     custom: true,
     render: () => cetvelHTML(),
     init: () => cetvelInit(),
+  },
+
+  sema: {
+    ico: '🧩', cat: 'Şema Tasarımı',
+    title: 'Güç Aktarım Şeması',
+    desc: 'Motor, dişli, kasnak, zincir ve vidalı mili kutular halinde ekle, oklarla birbirine bağla. ⚡ Hesapla ile tüm zincirin devrini, dönüş yönünü, torkunu, ilerlemesini ve dozajını tek seferde gör. Şeman otomatik kaydedilir.',
+    custom: true,
+    render: () => semaHTML(),
+    init: () => sInit(),
   },
 
 };
@@ -1785,6 +1826,378 @@ function cetvelBindHandles() {
   });
 }
 
+/* =======================  GÜÇ AKTARIM ŞEMASI  ======================= */
+const S_TYPES = {
+  motor:  { ico: '⚡', name: 'Motor', color: '#f59e0b', params: [
+    { id: 'ad', t: 'text', label: 'Ad / model', def: 'GS12 DC' },
+    { id: 'n',  label: 'Devir (d/dak)', def: '30' },
+    { id: 'M',  label: 'Tork N·mm (isteğe bağlı)', def: '' },
+  ]},
+  disli:  { ico: '⚙️', name: 'Dişli', color: '#2563eb', params: [
+    { id: 'z', label: 'Diş sayısı', def: '30' },
+    { id: 'd', label: 'Çap mm (isteğe bağlı)', def: '' },
+  ]},
+  kasnak: { ico: '🛞', name: 'Kasnak', color: '#0ea5e9', params: [
+    { id: 'd', label: 'Çap (mm)', def: '60' },
+  ]},
+  zincir: { ico: '🔗', name: 'Zincir dişlisi', color: '#10b981', params: [
+    { id: 'z', label: 'Diş sayısı', def: '18' },
+    { id: 'p', label: 'Adım mm (isteğe bağlı)', def: '' },
+  ]},
+  vida:   { ico: '🔩', name: 'Vidalı mil', color: '#8b5cf6', params: [
+    { id: 'Ph', label: 'Hatve (mm/dev)', def: '1' },
+    { id: 'ds', label: 'Şırınga çapı mm (isteğe bağlı)', def: '' },
+  ]},
+};
+
+let sN = [], sE = [], sNext = 1, sMode = 'move', sLinkSrc = null, sSelEdge = null;
+
+function sNum(x) { const f = parseFloat(String(x == null ? '' : x).replace(',', '.')); return isNaN(f) ? null : f; }
+function sLabel(n) {
+  const t = S_TYPES[n.type];
+  if (n.type === 'motor' && n.params.ad) return t.ico + ' ' + n.params.ad;
+  return t.ico + ' ' + t.name + ' #' + n.id;
+}
+function sSave() {
+  try { localStorage.setItem('mh_sema', JSON.stringify({ n: sN, e: sE, x: sNext })); } catch (_) {}
+}
+function sLoad() {
+  try {
+    const raw = localStorage.getItem('mh_sema');
+    if (!raw) return;
+    const o = JSON.parse(raw);
+    if (o && Array.isArray(o.n)) { sN = o.n; sE = o.e || []; sNext = o.x || (sN.length + 1); }
+  } catch (_) {}
+}
+
+function semaHTML() {
+  let addBtns = '';
+  for (const [k, t] of Object.entries(S_TYPES)) {
+    addBtns += `<button class="s-addbtn" onclick="sAdd('${k}')">${t.ico} ${t.name}</button>`;
+  }
+  return `
+  <div class="card">
+    <div class="s-toolbar">
+      <span class="lbl">EKLE:</span>
+      ${addBtns}
+      <span style="flex:1"></span>
+      <div class="k-seg" id="sModeSeg">
+        <button data-m="move">🖐 Taşı</button>
+        <button data-m="link">🔗 Bağla</button>
+      </div>
+      <button class="s-addbtn" onclick="sExample()">🧪 Örnek: İnsülin Pompası</button>
+      <button class="s-addbtn" onclick="sClear()">🗑 Temizle</button>
+    </div>
+    <div class="s-wrap">
+      <div class="s-canvas" id="sCanvas"><div class="s-inner" id="sInner"></div></div>
+      <button class="btn btn-primary s-calcbtn" onclick="sCalc()">⚡ Hesapla</button>
+    </div>
+    <div class="s-help">
+      ① Yukarıdan eleman ekle, <b>🖐 Taşı</b> modunda kutuları sürükle &nbsp;·&nbsp;
+      ② <b>🔗 Bağla</b> moduna geç: önce <b>döndüren</b>, sonra <b>döndürülen</b> kutuya tıkla &nbsp;·&nbsp;
+      ③ Oka tıklayıp türünü değiştir: <b style="color:#2563eb">⚙ kavrama</b> = dişliler birbirine geçmiş · <b style="color:#94a3b8">═ aynı mil</b> = birlikte döner &nbsp;·&nbsp;
+      ④ Sağ alttaki <b>⚡ Hesapla</b>'ya bas.
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px;">
+    <h3><span class="dot"></span> Sonuçlar</h3>
+    <div id="sSummary"><div class="empty">Şemayı kur ve <b>⚡ Hesapla</b>'ya bas.<br>Her kutunun devri, yönü ve dozajı burada + kutuların içinde görünecek. 👇</div></div>
+  </div>`;
+}
+
+function sInit() {
+  sLoad();
+  document.querySelectorAll('#sModeSeg button').forEach(b => {
+    b.onclick = () => { sMode = b.dataset.m; sLinkSrc = null; sModeUI(); sRenderAll(); };
+  });
+  sModeUI();
+  const canvas = document.getElementById('sCanvas');
+  canvas.addEventListener('pointerdown', (e) => {
+    const t = e.target;
+    if (t.id === 'sInner' || t.id === 'sCanvas' || t.id === 'sSvg' || t.tagName === 'svg') {
+      sHideMenu();
+      if (sLinkSrc !== null) { sLinkSrc = null; sRenderAll(); }
+    }
+  });
+  sRenderAll();
+}
+function sModeUI() {
+  document.querySelectorAll('#sModeSeg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.m === sMode));
+  const c = document.getElementById('sCanvas');
+  if (c) c.style.cursor = sMode === 'link' ? 'crosshair' : 'default';
+}
+
+function sAdd(type) {
+  const i = sN.length;
+  sN.push({ id: sNext++, type, x: 40 + (i % 5) * 230, y: 40 + Math.floor(i / 5) * 190, params: Object.fromEntries(S_TYPES[type].params.map(p => [p.id, p.def])) });
+  sSave(); sRenderAll();
+}
+function sDel(id) {
+  sN = sN.filter(n => n.id !== id);
+  sE = sE.filter(e => e.from !== id && e.to !== id);
+  sHideMenu(); sSave(); sRenderAll();
+}
+function sClear() {
+  if (!sN.length || confirm('Tüm şema silinsin mi?')) {
+    sN = []; sE = []; sNext = 1; sLinkSrc = null; sHideMenu(); sSave(); sRenderAll();
+    const sum = document.getElementById('sSummary');
+    if (sum) sum.innerHTML = '<div class="empty">Şemayı kur ve <b>⚡ Hesapla</b>\'ya bas. 👇</div>';
+  }
+}
+function sExample() {
+  sN = [
+    { id: 1, type: 'motor', x: 40,  y: 80, params: { ad: 'GS12 DC', n: '30', M: '' } },
+    { id: 2, type: 'disli', x: 300, y: 80, params: { z: '10', d: '10' } },
+    { id: 3, type: 'disli', x: 560, y: 80, params: { z: '30', d: '15' } },
+    { id: 4, type: 'vida',  x: 820, y: 80, params: { Ph: '1', ds: '10' } },
+  ];
+  sE = [
+    { from: 1, to: 2, kind: 'shaft' },
+    { from: 2, to: 3, kind: 'mesh' },
+    { from: 3, to: 4, kind: 'shaft' },
+  ];
+  sNext = 5; sLinkSrc = null; sHideMenu(); sSave(); sRenderAll(); sCalc();
+}
+
+/* ---- çizim ---- */
+function sNodeHTML(n) {
+  const t = S_TYPES[n.type];
+  let ps = '';
+  for (const p of t.params) {
+    const val = (n.params[p.id] != null ? n.params[p.id] : '');
+    ps += `<div class="s-p"><label>${p.label}</label><input data-p="${p.id}" ${p.t === 'text' ? 'type="text"' : 'type="text" inputmode="decimal"'} value="${String(val).replace(/"/g, '&quot;')}" /></div>`;
+  }
+  return `<div class="s-node ${sLinkSrc === n.id ? 'link-src' : ''}" data-id="${n.id}" style="left:${n.x}px; top:${n.y}px;">
+    <div class="s-head" style="background:${t.color}">${t.ico} ${t.name} <span class="s-x" title="Sil">✕</span></div>
+    <div class="s-body">${ps}<div class="s-res" id="sRes${n.id}">— henüz hesaplanmadı</div></div>
+  </div>`;
+}
+function sRenderAll() {
+  const inner = document.getElementById('sInner');
+  if (!inner) return;
+  let h = `<svg id="sSvg"></svg>`;
+  for (const n of sN) h += sNodeHTML(n);
+  h += `<div class="s-edgemenu" id="sEdgeMenu"></div>`;
+  inner.innerHTML = h;
+  for (const n of sN) sBindNode(n);
+  sDrawEdges();
+}
+function sBindNode(n) {
+  const el = document.querySelector(`.s-node[data-id="${n.id}"]`);
+  if (!el) return;
+  el.querySelector('.s-x').addEventListener('click', (e) => { e.stopPropagation(); sDel(n.id); });
+  el.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('pointerdown', (e) => e.stopPropagation());
+    inp.addEventListener('input', () => { n.params[inp.dataset.p] = inp.value; sSave(); });
+  });
+  el.addEventListener('pointerdown', (ev) => {
+    if (ev.target.tagName === 'INPUT' || ev.target.classList.contains('s-x')) return;
+    if (sMode === 'link') { sLinkClick(n.id); return; }
+    ev.preventDefault();
+    const inner = document.getElementById('sInner');
+    const rect = inner.getBoundingClientRect();
+    const ox = ev.clientX - rect.left - n.x, oy = ev.clientY - rect.top - n.y;
+    el.style.zIndex = 8;
+    try { el.setPointerCapture(ev.pointerId); } catch (_) {}
+    const move = (e2) => {
+      n.x = Math.max(0, Math.min(1400, e2.clientX - rect.left - ox));
+      n.y = Math.max(0, Math.min(860,  e2.clientY - rect.top  - oy));
+      el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+      sDrawEdges();
+    };
+    const up = () => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+      el.style.zIndex = 5;
+      sSave();
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  });
+}
+function sLinkClick(id) {
+  if (sLinkSrc === null) { sLinkSrc = id; sRenderAll(); return; }
+  if (sLinkSrc === id) { sLinkSrc = null; sRenderAll(); return; }
+  const a = sN.find(n => n.id === sLinkSrc), b = sN.find(n => n.id === id);
+  if (a && b && !sE.some(e => (e.from === a.id && e.to === b.id) || (e.from === b.id && e.to === a.id))) {
+    sE.push({ from: a.id, to: b.id, kind: sDefaultKind(a, b) });
+  }
+  sLinkSrc = null; sSave(); sRenderAll();
+}
+function sDefaultKind(a, b) {
+  const meshable = ['disli', 'kasnak', 'zincir'];
+  return (a.type === b.type && meshable.includes(a.type)) ? 'mesh' : 'shaft';
+}
+function sRectOf(id) {
+  const el = document.querySelector(`.s-node[data-id="${id}"]`);
+  if (!el) return null;
+  return { cx: el.offsetLeft + el.offsetWidth / 2, cy: el.offsetTop + el.offsetHeight / 2, hw: el.offsetWidth / 2 + 8, hh: el.offsetHeight / 2 + 8 };
+}
+function sBorderPt(r, toward) {
+  const dx = toward.cx - r.cx, dy = toward.cy - r.cy;
+  const m = Math.max(Math.abs(dx) / r.hw, Math.abs(dy) / r.hh, 1e-9);
+  const t = Math.min(1 / m, 1);
+  return { x: r.cx + dx * t, y: r.cy + dy * t };
+}
+function sDrawEdges() {
+  const svg = document.getElementById('sSvg');
+  if (!svg) return;
+  let h = `<defs>
+    <marker id="sArrB" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2563eb"/></marker>
+    <marker id="sArrG" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#94a3b8"/></marker>
+  </defs>`;
+  sE.forEach((e, i) => {
+    const ra = sRectOf(e.from), rb = sRectOf(e.to);
+    if (!ra || !rb) return;
+    const p1 = sBorderPt(ra, rb), p2 = sBorderPt(rb, ra);
+    const mesh = e.kind === 'mesh';
+    const col = mesh ? '#2563eb' : '#94a3b8';
+    h += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${col}" stroke-width="2.4" ${mesh ? '' : 'stroke-dasharray="7 5"'} marker-end="url(#${mesh ? 'sArrB' : 'sArrG'})"/>`;
+    const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+    h += `<text x="${mx}" y="${my - 8}" font-size="11" font-weight="700" fill="${col}" text-anchor="middle" paint-order="stroke" stroke="var(--card)" stroke-width="3">${mesh ? '⚙ kavrama' : '═ aynı mil'}</text>`;
+    h += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="transparent" stroke-width="18" style="cursor:pointer" onclick="sEdgeClick(${i}, event)"/>`;
+  });
+  svg.innerHTML = h;
+}
+function sEdgeClick(i, ev) {
+  ev.stopPropagation();
+  sSelEdge = i;
+  const e = sE[i];
+  const ra = sRectOf(e.from), rb = sRectOf(e.to);
+  if (!ra || !rb) return;
+  const mx = (ra.cx + rb.cx) / 2, my = (ra.cy + rb.cy) / 2;
+  const menu = document.getElementById('sEdgeMenu');
+  menu.innerHTML = `
+    <button onclick="sSetKind('mesh')">⚙ Kavrama</button>
+    <button onclick="sSetKind('shaft')">═ Aynı mil</button>
+    <button onclick="sReverseEdge()">⇄ Yön</button>
+    <button onclick="sDelEdge()">🗑 Sil</button>`;
+  menu.style.left = Math.max(0, mx - 110) + 'px';
+  menu.style.top = (my + 12) + 'px';
+  menu.style.display = 'flex';
+}
+function sHideMenu() { const m = document.getElementById('sEdgeMenu'); if (m) m.style.display = 'none'; sSelEdge = null; }
+function sSetKind(k) { if (sSelEdge != null && sE[sSelEdge]) { sE[sSelEdge].kind = k; } sHideMenu(); sSave(); sDrawEdges(); }
+function sReverseEdge() { if (sSelEdge != null && sE[sSelEdge]) { const e = sE[sSelEdge]; const t = e.from; e.from = e.to; e.to = t; } sHideMenu(); sSave(); sDrawEdges(); }
+function sDelEdge() { if (sSelEdge != null) sE.splice(sSelEdge, 1); sHideMenu(); sSave(); sDrawEdges(); }
+
+/* ---- hesap ---- */
+function sPropagate(ru, u, v, e, warns) {
+  if (e.kind === 'shaft') return { n: ru.n, dir: ru.dir, M: ru.M };
+  const zu = sNum(u.params.z), zv = sNum(v.params.z);
+  const du = sNum(u.params.d), dv = sNum(v.params.d);
+  if (u.type === 'disli' && v.type === 'disli') {
+    if (!(zu > 0 && zv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kavrama için iki dişlinin de diş sayısı gerekli.`); return null; }
+    return { n: ru.n * zu / zv, dir: -ru.dir, M: ru.M != null ? ru.M * zv / zu : null };
+  }
+  if (u.type === 'kasnak' && v.type === 'kasnak') {
+    if (!(du > 0 && dv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kayış bağlantısı için iki kasnağın da çapı gerekli.`); return null; }
+    return { n: ru.n * du / dv, dir: ru.dir, M: ru.M != null ? ru.M * dv / du : null };
+  }
+  if (u.type === 'zincir' && v.type === 'zincir') {
+    if (!(zu > 0 && zv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: zincir bağlantısı için iki dişlinin de diş sayısı gerekli.`); return null; }
+    return { n: ru.n * zu / zv, dir: ru.dir, M: ru.M != null ? ru.M * zv / zu : null };
+  }
+  warns.push(`${sLabel(u)} → ${sLabel(v)}: bu ikili "kavrama" ile bağlanamaz — oka tıklayıp "═ Aynı mil" seç.`);
+  return null;
+}
+function sCalc() {
+  const warns = [], res = {};
+  const sum = document.getElementById('sSummary');
+  if (!sN.length) { if (sum) sum.innerHTML = '<div class="empty">Şema boş — önce yukarıdan eleman ekle. 👆</div>'; return; }
+  const motors = sN.filter(n => n.type === 'motor');
+  if (!motors.length) warns.push('Şemada motor yok — ⚡ Motor ekleyip zincirin başına bağla.');
+  for (const m of motors) {
+    const n0 = sNum(m.params.n);
+    if (!(n0 > 0)) { warns.push(`${sLabel(m)}: devir (d/dak) girilmemiş.`); continue; }
+    res[m.id] = { n: n0, dir: 1, M: sNum(m.params.M) };
+  }
+  const q = motors.filter(m => res[m.id]);
+  while (q.length) {
+    const u = q.shift();
+    for (const e of sE) {
+      if (e.from !== u.id) continue;
+      const v = sN.find(n => n.id === e.to);
+      if (!v) continue;
+      const r = sPropagate(res[u.id], u, v, e, warns);
+      if (!r) continue;
+      if (res[v.id]) {
+        if (Math.abs(res[v.id].n - r.n) > 1e-6)
+          warns.push(`${sLabel(v)}: iki farklı hız geliyor (${fmt(res[v.id].n, 3)} ve ${fmt(r.n, 3)} d/dak) — bağlantıları kontrol et.`);
+        continue;
+      }
+      res[v.id] = r;
+      q.push(v);
+    }
+  }
+  /* kutu içi sonuçlar */
+  for (const n of sN) {
+    const el = document.getElementById('sRes' + n.id);
+    if (!el) continue;
+    const r = res[n.id];
+    if (!r) {
+      el.innerHTML = '<span style="color:#ef4444;">— güç ulaşmıyor (bağlantı yok?)</span>';
+      if (n.type !== 'motor') warns.push(`${sLabel(n)}: motor zincirine bağlı değil.`);
+      continue;
+    }
+    let h = `<b>${fmt(r.n, 3)} d/dak</b> ${r.dir > 0 ? '↻' : '↺'}`;
+    if (r.M != null) h += ` · M = ${fmt(r.M, 1)} N·mm`;
+    const dd = sNum(n.params.d);
+    if ((n.type === 'disli' || n.type === 'kasnak') && dd > 0) {
+      h += `<br>çevresel hız: ${fmt(PI * dd * r.n / 60000, 4)} m/s`;
+    }
+    if (n.type === 'zincir') {
+      const z = sNum(n.params.z), p = sNum(n.params.p);
+      if (z > 0 && p > 0) {
+        const d0 = p / Math.sin(PI / z);
+        h += `<br>d₀ = ${fmt(d0, 2)} mm · zincir hızı: ${fmt(PI * d0 * r.n / 60000, 4)} m/s`;
+      }
+    }
+    if (n.type === 'vida') {
+      const Ph = sNum(n.params.Ph), ds = sNum(n.params.ds);
+      if (Ph > 0) {
+        h += `<br>ilerleme: ${fmt(Ph, 3)} mm/dev · <b>${fmt(Ph * r.n, 3)} mm/dak</b>`;
+        if (ds > 0) {
+          const qml = PI / 4 * ds * ds * Ph / 1000;   // ml/dev
+          h += `<br>💧 dozaj: ${fmt(qml, 4)} ml/dev · ${fmt(qml * r.n, 4)} ml/dak · <b>${fmt(qml * r.n * 60, 3)} ml/saat</b>`;
+        }
+      }
+    }
+    el.innerHTML = h;
+  }
+  /* özet panel */
+  if (!sum) return;
+  let h = '';
+  for (const w of warns) h += `<div class="err" style="margin-bottom:8px;">⚠️ ${w}</div>`;
+  for (const n of sN) {
+    const r = res[n.id];
+    h += `<div class="result-row"><div class="r-label">${sLabel(n)}<small>${S_TYPES[n.type].name}</small></div>
+      <div class="r-val">${r ? fmt(r.n, 3) : '—'}<span>d/dak ${r ? (r.dir > 0 ? '↻' : '↺') : ''}</span></div></div>`;
+  }
+  const m0 = motors.find(m => res[m.id]);
+  if (m0) {
+    const leaves = sN.filter(n => res[n.id] && n.id !== m0.id && !sE.some(e => e.from === n.id));
+    for (const lf of leaves) {
+      const i = res[m0.id].n / res[lf.id].n;
+      h += `<div class="result-row highlight"><div class="r-label">Toplam iletim oranı<small>${sLabel(m0)} → ${sLabel(lf)}</small></div>
+        <div class="r-val">i = ${fmt(i, 3)}<span></span></div></div>`;
+    }
+    for (const n of sN) {
+      if (n.type !== 'vida' || !res[n.id]) continue;
+      const Ph = sNum(n.params.Ph), ds = sNum(n.params.ds);
+      if (Ph > 0 && ds > 0) {
+        const qml = PI / 4 * ds * ds * Ph / 1000;
+        h += `<div class="result-row highlight"><div class="r-label">💧 Dozaj — ${sLabel(n)}<small>q = π/4·d²·Ph · n</small></div>
+          <div class="r-val">${fmt(qml * res[n.id].n * 60, 3)}<span>ml/saat</span></div></div>`;
+      }
+    }
+  }
+  sum.innerHTML = h || '<div class="empty">Sonuç üretilemedi.</div>';
+}
+
 /* ---- PWA: telefon uygulaması desteği ---- */
 let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -1817,8 +2230,8 @@ renderHome();
 <!-- =======================  3D MOTOR (Three.js)  ======================= -->
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  "three": "./vendor/three.module.min.js",
+  "three/addons/": "./vendor/addons/"
 } }
 </script>
 <script type="module">
