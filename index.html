@@ -950,7 +950,8 @@ const CALCS = {
   terspompa: {
     ico: '🎯', cat: 'Ters Tasarım',
     title: 'Ters Tasarım — Dozaj Pompası',
-    desc: 'Hedef dozajı ve seçtiğin parçaları (motor, şırınga, vida) gir; uygulama gerekli dişli oranını, önerilen diş sayısını ve strok boyunu senin için hesaplasın. "Bu kadar ml lazım" de, boyutları uygulama ayarlasın.',
+    desc: 'Hedef dozajı ve seçtiğin parçaları (motor, şırınga, vida) gir; uygulama gerekli dişli oranını, önerilen diş sayısını ve strok boyunu senin için hesaplasın. "Bu kadar ml lazım" de, boyutları uygulama ayarlasın. Sonra tek tuşla şemaya aktar.',
+    action: { label: '🧩 Bu tasarımı Şemaya Aktar', fn: 'terspompaToSchema' },
     inputs: [
       { id: 'Q',  label: 'Hedef dozaj', sub: 'Q', unit: 'ml/saat', def: 5 },
       { id: 'V',  label: 'Toplam verilecek hacim (strok için, ops.)', sub: 'V', unit: 'ml', def: 10 },
@@ -1257,6 +1258,7 @@ function renderCalc(key) {
           <button class="btn btn-primary" onclick="calc('${key}')">⚡ Hesapla</button>
           <button class="btn btn-ghost" onclick="renderCalc('${key}')">Sıfırla</button>
         </div>
+        ${c.action ? `<button class="btn btn-primary" style="width:100%; margin-top:10px; background:linear-gradient(135deg,#10b981,#0ea5e9);" onclick="${c.action.fn}()">${c.action.label}</button>` : ''}
       </div>
       <div class="card results" id="results">
         <h3><span class="dot"></span> Sonuçlar</h3>
@@ -2465,6 +2467,47 @@ function sCalc() {
     }
   }
   sum.innerHTML = h || '<div class="empty">Sonuç üretilemedi.</div>';
+}
+
+/* Ters Tasarım çıktısını Şemaya kur */
+function terspompaToSchema() {
+  const g = (id) => { const el = document.getElementById('in_' + id); return el ? parseFloat(String(el.value).replace(',', '.')) : NaN; };
+  const Q = g('Q'), V = g('V'), n = g('n'), ds = g('ds'), Ph = g('Ph'), z1 = g('z1');
+  if (!(n > 0 && ds > 0 && Ph > 0 && z1 > 0 && Q > 0)) {
+    alert('Önce geçerli değerler gir: hedef dozaj, motor devri, şırınga çapı, vida hatvesi ve pinyon diş sayısı.');
+    return;
+  }
+  const A = PI / 4 * ds * ds;
+  const nScrew = Q / (A * Ph / 1000 * 60);      // gerekli vida devri
+  const i = n / nScrew;                          // gerekli redüksiyon
+  const stroke = V > 0 ? V * 1000 / A : 60;
+  const S = (x) => String(Math.round(x * 1000) / 1000);
+  const nodes = [{ id: 1, type: 'motor', x: 40, y: 90, params: { ad: 'Motor', n: S(n), M: '' } }];
+  const edges = [];
+  let idx = 2, prev = 1, xx = 250;
+  if (i > 8) {                                   // yüksek oran → sonsuz vida
+    const zc = Math.max(1, Math.round(i));
+    nodes.push({ id: idx, type: 'sonsuz', x: xx, y: 90, params: { ag: '1', d: '' } });
+    edges.push({ from: prev, to: idx, kind: 'shaft' }); prev = idx; idx++; xx += 210;
+    nodes.push({ id: idx, type: 'disli', x: xx, y: 90, params: { m: '1', z: S(zc) } });
+    edges.push({ from: prev, to: idx, kind: 'mesh' }); prev = idx; idx++; xx += 210;
+  } else {                                        // düşük oran → düz dişli çifti
+    const z2 = Math.max(1, Math.round(z1 * i));
+    nodes.push({ id: idx, type: 'disli', x: xx, y: 90, params: { m: '1', z: S(z1) } });
+    edges.push({ from: prev, to: idx, kind: 'shaft' }); prev = idx; idx++; xx += 210;
+    nodes.push({ id: idx, type: 'disli', x: xx, y: 90, params: { m: '1', z: S(z2) } });
+    edges.push({ from: prev, to: idx, kind: 'mesh' }); prev = idx; idx++; xx += 210;
+  }
+  nodes.push({ id: idx, type: 'vida', x: xx, y: 90, params: { Ph: S(Ph), ds: S(ds), L: S(stroke) } });
+  edges.push({ from: prev, to: idx, kind: 'shaft' }); prev = idx; idx++; xx += 210;
+  nodes.push({ id: idx, type: 'piston', x: xx, y: 90, params: { d: S(ds), t: '5' } });
+  edges.push({ from: prev, to: idx, kind: 'shaft' }); prev = idx; idx++; xx += 210;
+  nodes.push({ id: idx, type: 'hazne', x: xx, y: 90, params: { Dd: S(ds + 2), et: '1', L: S(stroke) } });
+  edges.push({ from: prev, to: idx, kind: 'shaft' }); prev = idx; idx++;
+  sN = nodes; sE = edges; sNext = idx; sLinkSrc = null;
+  sSave();
+  go('sema');
+  sCalc();
 }
 
 /* ---- PWA: telefon uygulaması desteği ---- */
