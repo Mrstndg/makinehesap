@@ -1194,6 +1194,7 @@ function songCardHTML() {
 
 /* =======================  UI MOTORU  ======================= */
 let active = 'home';
+let lastResult = null;   // sonuç kopyalama için son hesap
 
 function buildNav() {
   const groups = {};
@@ -1317,7 +1318,9 @@ function renderCalc(key) {
         ${c.action ? `<button class="btn btn-primary" style="width:100%; margin-top:10px; background:linear-gradient(135deg,#10b981,#0ea5e9);" onclick="${c.action.fn}()">${c.action.label}</button>` : ''}
       </div>
       <div class="card results" id="results">
-        <h3><span class="dot"></span> Sonuçlar</h3>
+        <h3 style="display:flex; align-items:center; gap:8px;"><span class="dot"></span> Sonuçlar
+          <button id="copyBtn" onclick="copyResults()" style="margin-left:auto; display:none; font-size:12px; font-weight:700; border:1px solid var(--border); background:var(--surface); color:var(--text); padding:5px 11px; border-radius:8px; cursor:pointer; font-family:var(--font);">📋 Kopyala</button>
+        </h3>
         <div id="resBody"><div class="empty">Değerleri girip <b>Hesapla</b>’ya bas.<br>Sonuçlar burada görünecek. 👇</div></div>
       </div>
     </div>`;
@@ -1345,9 +1348,41 @@ function calc(key) {
       html += `<div class="formula-box"><div class="ftitle">Kullanılan Formüller</div>${out.formula.join('<br>')}</div>`;
     }
     body.innerHTML = html;
+    lastResult = { c, out };
+    const cb = document.getElementById('copyBtn'); if (cb) cb.style.display = 'inline-block';
   } catch (e) {
     body.innerHTML = `<div class="err">⚠️ Hesaplama yapılamadı. Lütfen tüm değerleri kontrol et.</div>`;
+    lastResult = null;
+    const cb = document.getElementById('copyBtn'); if (cb) cb.style.display = 'none';
   }
+}
+
+function copyResults() {
+  if (!lastResult) return;
+  const { c, out } = lastResult;
+  let txt = c.title + '\n' + '─'.repeat(32) + '\nGirdiler:\n';
+  for (const inp of c.inputs) {
+    const el = document.getElementById('in_' + inp.id);
+    const raw = el ? el.value : '';
+    if (raw !== '' && raw != null) txt += `  • ${inp.label}: ${raw} ${inp.unit || ''}\n`;
+  }
+  txt += '\nSonuçlar:\n';
+  for (const r of out.rows) txt += `  • ${r.label}: ${r.val} ${r.unit || ''}\n`;
+  txt += '\n— MakineHesap · gdntsrm.com';
+  const done = () => {
+    const b = document.getElementById('copyBtn');
+    if (b) { const o = b.innerHTML; b.innerHTML = '✓ Kopyalandı'; setTimeout(() => { b.innerHTML = o; }, 1500); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
+  } else fallbackCopy(txt, done);
+}
+function fallbackCopy(txt, done) {
+  const ta = document.createElement('textarea');
+  ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) {}
+  ta.remove();
 }
 
 function go(key) {
