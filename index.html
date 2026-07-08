@@ -1865,17 +1865,20 @@ const S_TYPES = {
   vida:   { ico: '🔩', name: 'Vidalı mil', color: '#8b5cf6', params: [
     { id: 'Ph', label: 'Hatve (mm/dev)', def: '1' },
     { id: 'ds', label: 'Şırınga çapı mm (isteğe bağlı)', def: '' },
+    { id: 'L',  label: 'Kullanılabilir boy / strok mm (isteğe bağlı)', def: '' },
   ]},
   vidasomun: { ico: '🪛', name: 'Vida–Somun', color: '#7c3aed', params: [
     { id: 'd',   label: 'Dış çap (mm)', def: '8' },
     { id: 'dic', label: 'İç çap (mm)', def: '6.6' },
     { id: 'P',   label: 'Adım (mm)', def: '1.25' },
     { id: 'ag',  label: 'Ağız sayısı', def: '1' },
+    { id: 'L',   label: 'Strok / vida boyu mm (isteğe bağlı)', def: '' },
   ]},
   difvida: { ico: '🧬', name: 'Diferansiyel vida', color: '#a855f7', params: [
     { id: 'Pdd', label: 'Dış vida — dış adım (mm)', def: '1.5' },
     { id: 'Pdi', label: 'Dış vida — iç adım (mm)', def: '1.25' },
     { id: 'Pid', label: 'İç vida — dış adım (mm)', def: '1.25' },
+    { id: 'L',   label: 'Strok mm (isteğe bağlı)', def: '' },
   ]},
   kremayer: { ico: '🛤️', name: 'Kremayer', color: '#f97316', params: [
     { id: 'L', label: 'Boy mm (isteğe bağlı)', def: '' },
@@ -2234,8 +2237,13 @@ function sResHTML(n, r) {
   }
   if (n.type === 'mil') {
     const L = sNum(P.L);
-    if (dd > 0 && r.M != null) h += `<br>burulma: τ = ${fmt(16 * r.M / (PI * dd * dd * dd), 2)} N/mm²`;
-    if (L > 0) h += `<br>boy: ${fmt(L, 1)} mm`;
+    if (dd > 0 && r.M != null) {
+      h += `<br>burulma gerilmesi: τ = ${fmt(16 * r.M / (PI * dd * dd * dd), 2)} N/mm²`;
+      if (L > 0) {
+        const G = 80000, J = PI * dd * dd * dd * dd / 32;   // çelik G≈80 GPa
+        h += `<br>burulma açısı: θ = ${fmt(r.M * L / (G * J) * 180 / PI, 3)}° <span style="color:var(--muted)">(boy ${fmt(L, 0)} mm)</span>`;
+      }
+    } else if (L > 0) h += `<br>boy: ${fmt(L, 1)} mm`;
   }
   if (n.type === 'kaplin' && r.M != null) {
     const Mmax = sNum(P.Mmax);
@@ -2244,12 +2252,17 @@ function sResHTML(n, r) {
       : `<br>✓ tork uygun (${fmt(r.M, 1)} ≤ ${fmt(Mmax, 1)} N·mm)`;
   }
   if (n.type === 'vida') {
-    const Ph = sNum(P.Ph), ds = sNum(P.ds);
+    const Ph = sNum(P.Ph), ds = sNum(P.ds), L = sNum(P.L);
     if (Ph > 0 && r.n != null) {
-      h += `<br>ilerleme: ${fmt(Ph, 3)} mm/dev · <b>${fmt(Ph * r.n, 3)} mm/dak</b>`;
+      const vlin = Ph * r.n;
+      h += `<br>ilerleme: ${fmt(Ph, 3)} mm/dev · <b>${fmt(vlin, 3)} mm/dak</b>`;
       if (ds > 0) {
         const qml = PI / 4 * ds * ds * Ph / 1000;
         h += `<br>💧 dozaj: ${fmt(qml, 4)} ml/dev · ${fmt(qml * r.n, 4)} ml/dak · <b>${fmt(qml * r.n * 60, 3)} ml/saat</b>`;
+      }
+      if (L > 0 && vlin > 0) {
+        h += `<br>📏 strok ${fmt(L, 0)} mm → tam süre: <b>${fmt(L / vlin, 1)} dak</b>`;
+        if (ds > 0) h += ` · toplam hacim: <b>${fmt(PI / 4 * ds * ds * L / 1000, 3)} ml</b>`;
       }
     }
   }
@@ -2262,19 +2275,26 @@ function sResHTML(n, r) {
         const d2 = (dd + dic) / 2;
         h += `<br>d₂ = ${fmt(d2, 2)} mm · helis açısı β = ${fmt(Math.atan(Ph / (PI * d2)) * 180 / PI, 2)}°`;
       }
+      const L = sNum(P.L), vlin = Ph * r.n;
+      if (L > 0 && vlin > 0) h += `<br>📏 strok ${fmt(L, 0)} mm → tam süre: <b>${fmt(L / vlin, 1)} dak</b>`;
     }
   }
   if (n.type === 'difvida' && r.n != null) {
     const a = sNum(P.Pdd), b = sNum(P.Pdi), c = sNum(P.Pid);
     if (a != null && b != null) {
       h += `<br>dış vida: dış adım ${fmt(a, 2)} / iç adım ${fmt(b, 2)} mm`;
-      h += `<br>net ilerleme: <b>${fmt(a - b, 3)} mm/dev</b> · ${fmt((a - b) * r.n, 4)} mm/dak 🎯`;
+      const netv = (a - b) * r.n;
+      h += `<br>net ilerleme: <b>${fmt(a - b, 3)} mm/dev</b> · ${fmt(netv, 4)} mm/dak 🎯`;
+      const L = sNum(P.L);
+      if (L > 0 && Math.abs(netv) > 1e-9) h += `<br>📏 strok ${fmt(L, 0)} mm → tam süre: <b>${fmt(Math.abs(L / netv), 1)} dak</b>`;
       if (c != null && Math.abs(c - b) > 1e-6)
         h += `<br><span style="color:#ef4444;">⚠ iç vidanın dış adımı (${fmt(c, 2)}), dış vidanın iç adımına (${fmt(b, 2)}) eşit olmalı — kavramaz.</span>`;
     }
   }
   if (n.type === 'kremayer' && r.lin != null) {
     h += `<br>${fmt(r.lin / 60000, 4)} m/s doğrusal hız`;
+    const L = sNum(P.L);
+    if (L > 0 && Math.abs(r.lin) > 1e-9) h += `<br>📏 boy ${fmt(L, 0)} mm → uçtan uca: <b>${fmt(Math.abs(L / r.lin), 2)} dak</b>`;
   }
   if (n.type === 'piston') {
     if (dd > 0) h += `<br>alan: ${fmt(PI / 4 * dd * dd, 2)} mm²`;
