@@ -1837,12 +1837,12 @@ const S_TYPES = {
     { id: 'M',  label: 'Tork N·mm (isteğe bağlı)', def: '' },
   ]},
   disli:  { ico: '⚙️', name: 'Dişli', color: '#2563eb', params: [
+    { id: 'm', label: 'Modül (mm)', def: '1.5' },
     { id: 'z', label: 'Diş sayısı', def: '30' },
-    { id: 'd', label: 'Çap mm (isteğe bağlı)', def: '' },
   ]},
   konik:  { ico: '🔺', name: 'Konik dişli', color: '#1d4ed8', params: [
+    { id: 'm', label: 'Modül (mm)', def: '2' },
     { id: 'z', label: 'Diş sayısı', def: '20' },
-    { id: 'd', label: 'Çap mm (isteğe bağlı)', def: '' },
   ]},
   sonsuz: { ico: '🌪️', name: 'Sonsuz vida', color: '#dc2626', params: [
     { id: 'ag', label: 'Ağız sayısı', def: '1' },
@@ -1873,8 +1873,9 @@ const S_TYPES = {
     { id: 'ag',  label: 'Ağız sayısı', def: '1' },
   ]},
   difvida: { ico: '🧬', name: 'Diferansiyel vida', color: '#a855f7', params: [
-    { id: 'Ph1', label: 'Büyük adım (mm)', def: '1.5' },
-    { id: 'Ph2', label: 'Küçük adım (mm)', def: '1.25' },
+    { id: 'Pdd', label: 'Dış vida — dış adım (mm)', def: '1.5' },
+    { id: 'Pdi', label: 'Dış vida — iç adım (mm)', def: '1.25' },
+    { id: 'Pid', label: 'İç vida — dış adım (mm)', def: '1.25' },
   ]},
   kremayer: { ico: '🛤️', name: 'Kremayer', color: '#f97316', params: [
     { id: 'L', label: 'Boy mm (isteğe bağlı)', def: '' },
@@ -1990,8 +1991,8 @@ function sClear() {
 function sExample() {
   sN = [
     { id: 1, type: 'motor',  x: 40,   y: 80,  params: { ad: 'DC Motor', n: '30', M: '' } },
-    { id: 2, type: 'disli',  x: 280,  y: 80,  params: { z: '10', d: '10' } },
-    { id: 3, type: 'disli',  x: 520,  y: 80,  params: { z: '30', d: '15' } },
+    { id: 2, type: 'disli',  x: 280,  y: 80,  params: { m: '1', z: '10' } },
+    { id: 3, type: 'disli',  x: 520,  y: 80,  params: { m: '1', z: '30' } },
     { id: 4, type: 'vida',   x: 760,  y: 80,  params: { Ph: '1', ds: '' } },
     { id: 5, type: 'piston', x: 1000, y: 80,  params: { d: '9', t: '5' } },
     { id: 6, type: 'hazne',  x: 1240, y: 80,  params: { Dd: '12', et: '1', L: '60' } },
@@ -2142,6 +2143,9 @@ function sPropagate(ru, u, v, e, warns) {
   const tu = u.type, tv = v.type;
   if ((tu === 'disli' && tv === 'disli') || (tu === 'konik' && tv === 'konik')) {
     if (!(zu > 0 && zv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kavrama için iki dişlinin de diş sayısı gerekli.`); return null; }
+    const mu = sNum(u.params.m), mv = sNum(v.params.m);
+    if (mu > 0 && mv > 0 && Math.abs(mu - mv) > 1e-6)
+      warns.push(`${sLabel(u)} → ${sLabel(v)}: kavrama için modüller eşit olmalı (${fmt(mu, 2)} ≠ ${fmt(mv, 2)} mm).`);
     return { n: ru.n * zu / zv, dir: tu === 'disli' ? -ru.dir : ru.dir, M: ru.M != null ? ru.M * zv / zu : null };
   }
   if (tu === 'sonsuz' && tv === 'disli') {
@@ -2154,8 +2158,10 @@ function sPropagate(ru, u, v, e, warns) {
     return null;
   }
   if (tu === 'disli' && tv === 'kremayer') {
-    if (!(du > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kremayer için pinyon dişlinin çapı gerekli.`); return null; }
-    return { n: null, dir: ru.dir, M: null, lin: PI * du * ru.n };
+    const mu = sNum(u.params.m), zpu = sNum(u.params.z);
+    const d0 = (mu > 0 && zpu > 0) ? mu * zpu : null;
+    if (!(d0 > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kremayer için pinyonun modülü ve diş sayısı gerekli.`); return null; }
+    return { n: null, dir: ru.dir, M: null, lin: PI * d0 * ru.n };
   }
   if (tu === 'kasnak' && tv === 'kasnak') {
     if (!(du > 0 && dv > 0)) { warns.push(`${sLabel(u)} → ${sLabel(v)}: kayış bağlantısı için iki kasnağın da çapı gerekli.`); return null; }
@@ -2178,7 +2184,7 @@ function sAugment(nd, r) {
     const p = sNum(P.P), ag = sNum(P.ag) || 1;
     if (p > 0 && r.n != null) r.lin = p * ag * r.n;
   } else if (nd.type === 'difvida') {
-    const a = sNum(P.Ph1), b = sNum(P.Ph2);
+    const a = sNum(P.Pdd), b = sNum(P.Pdi);
     if (a != null && b != null && r.n != null) r.lin = (a - b) * r.n;
   } else if (nd.type === 'kremayer') {
     r.n = null;
@@ -2204,7 +2210,15 @@ function sResHTML(n, r) {
     h = `<b>${fmt(r.Q, 4)} ml/dak</b>`;
   }
   const dd = sNum(P.d);
-  if ((n.type === 'disli' || n.type === 'konik' || n.type === 'kasnak') && dd > 0 && r.n != null) {
+  if (n.type === 'disli' || n.type === 'konik') {
+    const m = sNum(P.m), z = sNum(P.z);
+    if (m > 0 && z > 0) {
+      const d0 = m * z, da = d0 + 2 * m, df = d0 - 2.5 * m;
+      h += `<br>d₀ = ${fmt(d0, 2)} · da = ${fmt(da, 2)} · df = ${fmt(df, 2)} mm`;
+      if (r.n != null) h += `<br>çevresel hız: ${fmt(PI * d0 * r.n / 60000, 4)} m/s`;
+    }
+  }
+  if (n.type === 'kasnak' && dd > 0 && r.n != null) {
     h += `<br>çevresel hız: ${fmt(PI * dd * r.n / 60000, 4)} m/s`;
   }
   if (n.type === 'zincir') {
@@ -2251,10 +2265,12 @@ function sResHTML(n, r) {
     }
   }
   if (n.type === 'difvida' && r.n != null) {
-    const a = sNum(P.Ph1), b = sNum(P.Ph2);
+    const a = sNum(P.Pdd), b = sNum(P.Pdi), c = sNum(P.Pid);
     if (a != null && b != null) {
-      h += `<br>net ilerleme: <b>${fmt(a - b, 3)} mm/dev</b> · ${fmt((a - b) * r.n, 4)} mm/dak`;
-      h += `<br>🎯 hassas hareket (${fmt(a, 2)} − ${fmt(b, 2)})`;
+      h += `<br>dış vida: dış adım ${fmt(a, 2)} / iç adım ${fmt(b, 2)} mm`;
+      h += `<br>net ilerleme: <b>${fmt(a - b, 3)} mm/dev</b> · ${fmt((a - b) * r.n, 4)} mm/dak 🎯`;
+      if (c != null && Math.abs(c - b) > 1e-6)
+        h += `<br><span style="color:#ef4444;">⚠ iç vidanın dış adımı (${fmt(c, 2)}), dış vidanın iç adımına (${fmt(b, 2)}) eşit olmalı — kavramaz.</span>`;
     }
   }
   if (n.type === 'kremayer' && r.lin != null) {
