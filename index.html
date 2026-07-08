@@ -463,6 +463,30 @@
   .side-foot a { color: var(--primary); text-decoration: none; font-weight: 700; font-size: 13.5px; }
   .side-foot a:hover { text-decoration: underline; }
   .side-foot small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+  /* ---------- Yazdırma / PDF ---------- */
+  .print-header { display: none; }
+  @media print {
+    @page { margin: 14mm; }
+    #bg3d, .sidebar, .topbar, .intro, .s-fixedbar, .song-player, .home-search,
+    .s-help, .k-hint, .menu-toggle, .btn-row, .s-toolbar, .install-note { display: none !important; }
+    body { background: #fff !important; color: #000 !important; }
+    .app { display: block !important; }
+    .main { padding: 0 !important; }
+    .card { box-shadow: none !important; border: 1px solid #bbb !important; break-inside: avoid; page-break-inside: avoid; }
+    .panels { display: block !important; }
+    .panels .card { margin-bottom: 12px; }
+    .print-header { display: flex !important; align-items: baseline; gap: 12px;
+      border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 16px; }
+    .print-header .ph-brand { font-weight: 800; font-size: 18px; }
+    .print-header .ph-site { color: #2563eb; font-weight: 700; }
+    .print-header .ph-page { margin-left: auto; color: #555; font-size: 12px; }
+    .result-row, .s-node, .formula-box, .s-res { color: #000 !important; }
+    .result-row.highlight { background: #eef4ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .s-canvas { height: auto !important; overflow: visible !important; border: 1px solid #ccc !important; }
+    .s-inner { width: 100% !important; height: auto !important; }
+    a { color: #2563eb !important; text-decoration: none; }
+  }
 </style>
 </head>
 <body data-theme="dark">
@@ -515,8 +539,14 @@
       <div style="display:flex; gap:10px;">
         <button class="theme-btn menu-toggle" onclick="toggleMenu()">☰ Menü</button>
         <button class="theme-btn" id="installBtn" style="display:none; background:var(--primary); color:#fff; border-color:var(--primary);" onclick="installApp()">📲 Uygulamayı Yükle</button>
+        <button class="theme-btn" onclick="window.print()" title="Yazdır / PDF olarak kaydet">🖨 PDF</button>
         <button class="theme-btn" onclick="toggleTheme()"><span id="themeIcon">☀️</span> <span id="themeTxt">Aydınlık</span></button>
       </div>
+    </div>
+    <div class="print-header">
+      <span class="ph-brand">⚙️ MakineHesap</span>
+      <span class="ph-site">gdntsrm.com</span>
+      <span class="ph-page" id="phPage"></span>
     </div>
     <div id="content"></div>
   </main>
@@ -1301,6 +1331,11 @@ function go(key) {
   buildNav();
   if (key === 'home') renderHome(); else renderCalc(key);
   document.getElementById('sidebar').classList.remove('open');
+  const ph = document.getElementById('phPage');
+  if (ph) {
+    const t = (key !== 'home' && CALCS[key]) ? CALCS[key].title : 'Ana Sayfa';
+    ph.textContent = t + ' · ' + new Date().toLocaleDateString('tr-TR');
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
