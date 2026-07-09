@@ -1078,6 +1078,15 @@ const CALCS = {
     init: () => pompakodInit(),
   },
 
+  kapalidozaj: {
+    ico: '🧭', cat: 'Elektronik & Kontrol',
+    title: 'Kapalı Çevrim Dozaj (Encoder)',
+    desc: 'DC motor + manyetik encoder (AS5048A) + DRV8874 sürücü ile hassas dozaj. Vidanın net ilerlemesi, piston çapı ve encoder çözünürlüğünden µL/sayım, doz birimi başına sayım ve maks. debiyi hesaplar; kapalı çevrim ESP32/Arduino kod iskeletini üretir.',
+    custom: true,
+    render: () => kdozHTML(),
+    init: () => kdozInit(),
+  },
+
   sema: {
     ico: '🧩', cat: 'Şema Tasarımı',
     title: 'Güç Aktarım Şeması',
@@ -2828,6 +2837,147 @@ function pompakodGen(p) {
 function pompakodCopyCode() {
   const txt = document.getElementById('pkCode').textContent;
   const done = () => { const b = document.querySelector('.pk-copy'); if (b) { const o = b.textContent; b.textContent = '✓ Kopyalandı'; setTimeout(() => { b.textContent = o; }, 1500); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
+  else fallbackCopy(txt, done);
+}
+
+/* =======================  KAPALI ÇEVRİM DOZAJ (ENCODER)  ======================= */
+const KD_IN = [
+  { id: 'net',    label: 'Vida net ilerleme', unit: 'mm/dev', def: '4.0' },
+  { id: 'ds',     label: 'Piston / rezervuar iç çapı', unit: 'mm', def: '14' },
+  { id: 'cpr',    label: 'Encoder çözünürlüğü', unit: 'sayım/dev', def: '16384' },
+  { id: 'doseUL', label: '1 doz birimi', unit: 'µL', def: '10' },
+  { id: 'rpm',    label: 'Maks. motor devri', unit: 'd/dak', def: '30' },
+  { id: 'Vres',   label: 'Rezervuar hacmi (ops.)', unit: 'ml', def: '3' },
+];
+function kdozHTML() {
+  let fields = '';
+  for (const p of KD_IN) {
+    fields += `<div class="field"><label>${p.label}</label><div class="input-wrap">
+      <input id="kd_${p.id}" type="text" inputmode="decimal" value="${p.def}" oninput="kdozCalc()" />
+      ${p.unit ? `<span class="unit">${p.unit}</span>` : ''}</div></div>`;
+  }
+  return `
+  <div class="panels">
+    <div class="card">
+      <h3><span class="dot"></span> Mekanik & Encoder</h3>
+      <div class="pk-grid">${fields}</div>
+    </div>
+    <div class="card">
+      <h3><span class="dot"></span> Çözünürlük & Debi</h3>
+      <div class="pk-res" id="kdRes"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px;">
+    <h3><span class="dot"></span> Kapalı Çevrim Kodu <span style="font-weight:500;color:var(--muted);font-size:12px;margin-left:6px;">ESP32/Arduino · DRV8874 + AS5048A</span></h3>
+    <div class="pk-codewrap">
+      <button class="pk-copy" onclick="kdozCopyCode()">📋 Kodu Kopyala</button>
+      <pre class="pk-code" id="kdCode"></pre>
+    </div>
+    <div class="s-help">🔌 DRV8874: PH→D6 (yön), EN→D5 (PWM) · AS5048A: SPI (CS→D10, SCK/MISO/MOSI donanım SPI). ⚠ Kod bir <b>başlangıç iskeleti</b>dir — encoder okuması ve PWM'i kendi kartında test edip ayarla.</div>
+  </div>`;
+}
+function kdozInit() { kdozCalc(); }
+function kdozCalc() {
+  const g = (id) => { const el = document.getElementById('kd_' + id); return el ? el.value : ''; };
+  const num = (x) => { const f = parseFloat(String(x).replace(',', '.')); return isNaN(f) ? null : f; };
+  const net = num(g('net')), ds = num(g('ds')), cpr = num(g('cpr')), doseUL = num(g('doseUL')),
+        rpm = num(g('rpm')) || 0, Vres = num(g('Vres'));
+  const res = document.getElementById('kdRes'), codeEl = document.getElementById('kdCode');
+  if (!res || !codeEl) return;
+  if (!(net > 0 && ds > 0 && cpr > 0 && doseUL > 0)) {
+    res.innerHTML = '<div class="empty">Değerleri gir; çözünürlük, sayım/doz ve kod burada oluşacak. 👇</div>';
+    codeEl.textContent = '// Geçerli değerler girince kapalı çevrim kodu burada oluşur…';
+    return;
+  }
+  const A = PI / 4 * ds * ds;               // mm²
+  const mmCount = net / cpr;                // mm/sayım
+  const uLcount = A * mmCount;              // µL/sayım (mm²·mm = mm³ = µL)
+  const countsDose = doseUL / uLcount;      // sayım / doz birimi
+  const maxMlMin = A * net * rpm / 1000;    // ml/dak (maks)
+  const resUnits = Vres > 0 ? Vres * 1000 / doseUL : null;
+  const emptySec = (Vres > 0 && maxMlMin > 0) ? Vres / maxMlMin * 60 : null;
+  const rows = [
+    ['Doğrusal çözünürlük', fmt(mmCount * 1000, 4), 'µm/sayım', false],
+    ['Dozaj çözünürlüğü', fmt(uLcount, 4), 'µL/sayım', true],
+    ['1 doz birimi', fmt(countsDose, 1), 'sayım', true],
+    ['Maks. debi', fmt(maxMlMin, 3), 'ml/dak', false],
+    ['Maks. debi', fmt(maxMlMin * 60, 1), 'ml/saat', false],
+  ];
+  if (resUnits != null) rows.push(['Rezervuar kapasitesi', fmt(resUnits, 0), 'doz birimi', true]);
+  if (emptySec != null) rows.push(['Tam hızda boşalma', fmt(emptySec, 1), 'sn', false]);
+  let h = '';
+  for (const r of rows) h += `<div class="result-row ${r[3] ? 'highlight' : ''}"><div class="r-label">${r[0]}</div><div class="r-val">${r[1]}<span>${r[2]}</span></div></div>`;
+  if (countsDose < 20) h += `<div class="pk-warn">⚠ Doz başına sadece ${fmt(countsDose, 1)} sayım — çözünürlük düşük. Daha küçük hatveli vida ya da daha yüksek çözünürlüklü encoder düşün.</div>`;
+  res.innerHTML = h;
+  codeEl.textContent = kdozGen({ net, ds, A, cpr, doseUL, rpm, uLcount, countsDose, maxMlMin });
+}
+function kdozGen(p) {
+  const cpu = Math.round(p.countsDose);
+  const L = [];
+  L.push('/*  MakineHesap · Kapali Cevrim Dozaj  —  gdntsrm.com');
+  L.push('    DC motor + AS5048A encoder + DRV8874 surucu (PH/EN modu)');
+  L.push('    ------------------------------------------------------------');
+  L.push('    Net ilerleme  : ' + fmt(p.net, 3) + ' mm/dev   Piston: ' + fmt(p.ds, 2) + ' mm (' + fmt(p.A, 1) + ' mm2)');
+  L.push('    Encoder       : ' + fmt(p.cpr, 0) + ' sayim/dev  ->  ' + fmt(p.uLcount, 4) + ' uL/sayim');
+  L.push('    1 doz birimi  : ' + fmt(p.doseUL, 2) + ' uL  =  ' + cpu + ' sayim');
+  L.push('    NOT: encoder okuma + PWM kartinda TEST/AYAR gerektirir (iskelet kod).');
+  L.push('*/');
+  L.push('#include <SPI.h>');
+  L.push('');
+  L.push('const int ENC_CS   = 10;   // AS5048A chip select');
+  L.push('const int MOTOR_PH = 6;    // DRV8874 PH (yon)');
+  L.push('const int MOTOR_EN = 5;    // DRV8874 EN (PWM hiz)');
+  L.push('');
+  L.push('const long COUNTS_PER_UNIT = ' + cpu + ';   // 1 doz birimi = kac sayim');
+  L.push('const int  DOZAJ_PWM = 180;                 // 0-255 dozaj hizi');
+  L.push('');
+  L.push('long cumCount = 0;   // kumulatif konum');
+  L.push('int  lastRaw  = 0;');
+  L.push('');
+  L.push('int readAngle() {    // AS5048A 14-bit aci (0..16383)');
+  L.push('  SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE1));');
+  L.push('  digitalWrite(ENC_CS, LOW);');
+  L.push('  uint16_t v = SPI.transfer16(0xFFFF);   // aci okuma komutu');
+  L.push('  digitalWrite(ENC_CS, HIGH);');
+  L.push('  SPI.endTransaction();');
+  L.push('  return v & 0x3FFF;');
+  L.push('}');
+  L.push('');
+  L.push('void updatePosition() {   // sarma (wrap) yonetimi');
+  L.push('  int raw = readAngle();');
+  L.push('  int d = raw - lastRaw;');
+  L.push('  if (d >  8192) d -= 16384;');
+  L.push('  if (d < -8192) d += 16384;');
+  L.push('  cumCount += d;');
+  L.push('  lastRaw = raw;');
+  L.push('}');
+  L.push('');
+  L.push('void dozVer(float birim) {                 // "birim" kadar doz ver');
+  L.push('  long hedef = cumCount + (long)(birim * COUNTS_PER_UNIT);');
+  L.push('  digitalWrite(MOTOR_PH, HIGH);            // itme yonu');
+  L.push('  analogWrite(MOTOR_EN, DOZAJ_PWM);        // motoru dondur');
+  L.push('  while (cumCount < hedef) updatePosition();');
+  L.push('  analogWrite(MOTOR_EN, 0);                // hedefe ulasildi, dur');
+  L.push('}');
+  L.push('');
+  L.push('void setup() {');
+  L.push('  pinMode(ENC_CS, OUTPUT); digitalWrite(ENC_CS, HIGH);');
+  L.push('  pinMode(MOTOR_PH, OUTPUT);');
+  L.push('  pinMode(MOTOR_EN, OUTPUT); analogWrite(MOTOR_EN, 0);');
+  L.push('  SPI.begin();');
+  L.push('  lastRaw = readAngle();');
+  L.push('}');
+  L.push('');
+  L.push('void loop() {');
+  L.push('  dozVer(2.0);      // ornek: 2 birim bolus');
+  L.push('  delay(60000);     // ornek: 1 dk bekle');
+  L.push('}');
+  return L.join('\n');
+}
+function kdozCopyCode() {
+  const txt = document.getElementById('kdCode').textContent;
+  const done = () => { const btn = document.querySelector('#content .pk-copy'); if (btn) { const o = btn.textContent; btn.textContent = '✓ Kopyalandı'; setTimeout(() => { btn.textContent = o; }, 1500); } };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
   else fallbackCopy(txt, done);
 }
