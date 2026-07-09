@@ -474,6 +474,19 @@
   .side-foot a:hover { text-decoration: underline; }
   .side-foot small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
 
+  /* ---------- Pompa Kontrol (Arduino) ---------- */
+  .pk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+  @media (max-width: 560px) { .pk-grid { grid-template-columns: 1fr; } }
+  .pk-res { margin-top: 4px; }
+  .pk-codewrap { position: relative; margin-top: 14px; }
+  .pk-code { background: #0b1220; color: #e2e8f0; font-family: ui-monospace, 'Cascadia Code', monospace; font-size: 12.5px;
+    padding: 16px; border-radius: 12px; overflow-x: auto; white-space: pre; line-height: 1.55; border: 1px solid #1e293b; margin: 0; }
+  .pk-copy { position: absolute; top: 10px; right: 10px; font-size: 12px; font-weight: 700; border: 1px solid #334155;
+    background: #1e293b; color: #e2e8f0; padding: 6px 11px; border-radius: 8px; cursor: pointer; font-family: var(--font); }
+  .pk-copy:hover { background: #334155; }
+  .pk-warn { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; padding: 10px 13px; border-radius: 10px; font-size: 13px; margin-top: 10px; }
+  [data-theme="dark"] .pk-warn { background: rgba(146,64,14,.18); border-color: rgba(180,120,20,.4); color: #fcd34d; }
+
   /* ---------- Yazdırma / PDF ---------- */
   .print-header { display: none; }
   @media print {
@@ -1054,6 +1067,15 @@ const CALCS = {
         ]
       };
     }
+  },
+
+  pompakod: {
+    ico: '🔌', cat: 'Elektronik & Kontrol',
+    title: 'Pompa Kontrol (Arduino)',
+    desc: 'Step motorlu dozaj pompan için ml/adım çözünürlüğünü, adım zamanlamasını ve HAZIR Arduino kodunu üretir (A4988/DRV8825 sürücü). Hedef dozajı gir, kodu kopyala, karta yükle.',
+    custom: true,
+    render: () => pompakodHTML(),
+    init: () => pompakodInit(),
   },
 
   sema: {
@@ -2672,6 +2694,142 @@ function terspompaToSchema() {
   sSave();
   go('sema');
   sCalc();
+}
+
+/* =======================  POMPA KONTROL (ARDUINO)  ======================= */
+const PK_IN = [
+  { id: 'Q',     label: 'Hedef dozaj', unit: 'ml/saat', def: '5' },
+  { id: 'V',     label: 'Toplam hacim (ops. → bitince dur)', unit: 'ml', def: '' },
+  { id: 'ds',    label: 'Şırınga iç çapı', unit: 'mm', def: '15' },
+  { id: 'pitch', label: 'Vida hatvesi', unit: 'mm/dev', def: '1' },
+  { id: 'sRev',  label: 'Motor adım/devir', unit: 'adım', def: '200' },
+  { id: 'gear',  label: 'Dişli oranı (yoksa 1)', unit: '', def: '1' },
+];
+function pompakodHTML() {
+  let fields = '';
+  for (const p of PK_IN) {
+    fields += `<div class="field"><label>${p.label}</label><div class="input-wrap">
+      <input id="pk_${p.id}" type="text" inputmode="decimal" value="${p.def}" oninput="pompakodCalc()" />
+      ${p.unit ? `<span class="unit">${p.unit}</span>` : ''}</div></div>`;
+  }
+  const microOpts = [1, 2, 4, 8, 16, 32].map(m => `<option value="${m}" ${m === 16 ? 'selected' : ''}>1/${m}</option>`).join('');
+  return `
+  <div class="panels">
+    <div class="card">
+      <h3><span class="dot"></span> Pompa & Motor</h3>
+      <div class="pk-grid">
+        ${fields}
+        <div class="field"><label>Mikro adım (sürücü)</label><div class="input-wrap">
+          <select id="pk_micro" onchange="pompakodCalc()">${microOpts}</select></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3><span class="dot"></span> Sonuç</h3>
+      <div class="pk-res" id="pkRes"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px;">
+    <h3><span class="dot"></span> Arduino Kodu <span style="font-weight:500;color:var(--muted);font-size:12px;margin-left:6px;">A4988 / DRV8825 sürücü</span></h3>
+    <div class="pk-codewrap">
+      <button class="pk-copy" onclick="pompakodCopyCode()">📋 Kodu Kopyala</button>
+      <pre class="pk-code" id="pkCode"></pre>
+    </div>
+    <div class="s-help">🔌 Bağlantı: STEP→D3, DIR→D4, ENABLE→D5 · sürücünün VMOT ucuna motor beslemesi, GND ortak. Yön ters çıkarsa koddaki DIR'i LOW yap.</div>
+  </div>`;
+}
+function pompakodInit() { pompakodCalc(); }
+function pompakodCalc() {
+  const g = (id) => { const el = document.getElementById('pk_' + id); return el ? el.value : ''; };
+  const num = (x) => { const f = parseFloat(String(x).replace(',', '.')); return isNaN(f) ? null : f; };
+  const Q = num(g('Q')), V = num(g('V')), ds = num(g('ds')), pitch = num(g('pitch')),
+        sRev = num(g('sRev')), gear = num(g('gear')) || 1, micro = num(g('micro')) || 1;
+  const res = document.getElementById('pkRes'), codeEl = document.getElementById('pkCode');
+  if (!res || !codeEl) return;
+  if (!(Q > 0 && ds > 0 && pitch > 0 && sRev > 0)) {
+    res.innerHTML = '<div class="empty">Değerleri gir; çözünürlük, zamanlama ve kod burada oluşacak. 👇</div>';
+    codeEl.textContent = '// Geçerli değerler girince Arduino kodu burada oluşur…';
+    return;
+  }
+  const A = PI / 4 * ds * ds;
+  const effSteps = sRev * micro * gear;
+  const mmStep = pitch / effSteps;
+  const mlStep = A * mmStep / 1000;
+  const ulStep = mlStep * 1000;
+  const stepsSec = (Q / mlStep) / 3600;
+  const intervalMsRaw = 1000 / stepsSec;
+  const intervalMs = Math.max(1, Math.round(intervalMsRaw));
+  const totalSteps = (V > 0) ? Math.round(V / mlStep) : null;
+  const rows = [
+    ['Efektif çözünürlük', fmt(effSteps, 0), 'adım/dev', false],
+    ['Doğrusal adım', fmt(mmStep * 1000, 4), 'µm/adım', false],
+    ['Dozaj çözünürlüğü', fmt(ulStep, 4), 'µL/adım', true],
+    ['Adım hızı', fmt(stepsSec, 2), 'adım/s', false],
+    ['Adım aralığı', fmt(intervalMs, 0), 'ms', true],
+  ];
+  if (totalSteps != null) rows.push(['Toplam adım (' + fmt(V, 1) + ' ml)', fmt(totalSteps, 0), 'adım', true]);
+  let h = '';
+  for (const r of rows) h += `<div class="result-row ${r[3] ? 'highlight' : ''}"><div class="r-label">${r[0]}</div><div class="r-val">${r[1]}<span>${r[2]}</span></div></div>`;
+  if (intervalMsRaw < 2) h += `<div class="pk-warn">⚠ Adımlar çok sık (${fmt(intervalMsRaw, 2)} ms). Mikro adımı azalt ya da dişli oranını düşür — millis() 1 ms altını tutamaz.</div>`;
+  else if (intervalMs > 60000) h += `<div class="pk-warn">ℹ Çok yavaş dozaj: her adım ${fmt(intervalMs / 1000, 1)} s'de bir. Çalışır ama şırınga çok küçük adımlarla ilerler.</div>`;
+  res.innerHTML = h;
+  codeEl.textContent = pompakodGen({ Q, V, ds, A, pitch, sRev, micro, gear, effSteps, ulStep, stepsSec, intervalMs, totalSteps });
+}
+function pompakodGen(p) {
+  const hasTotal = p.totalSteps != null;
+  const L = [];
+  L.push('/*  MakineHesap · Dozaj Pompasi kontrol kodu  —  gdntsrm.com');
+  L.push('    Step motor + A4988/DRV8825 surucu');
+  L.push('    -------------------------------------------------');
+  L.push('    Hedef dozaj     : ' + fmt(p.Q, 3) + ' ml/saat');
+  L.push('    Siringa ic capi : ' + fmt(p.ds, 2) + ' mm  (kesit ' + fmt(p.A, 1) + ' mm2)');
+  L.push('    Vida hatvesi    : ' + fmt(p.pitch, 3) + ' mm/dev');
+  L.push('    Motor           : ' + fmt(p.sRev, 0) + ' adim/dev x 1/' + p.micro + ' x ' + fmt(p.gear, 2) + ' disli');
+  L.push('    Efektif         : ' + fmt(p.effSteps, 0) + ' adim/dev  ->  ' + fmt(p.ulStep, 4) + ' uL/adim');
+  L.push('    Zamanlama       : ' + fmt(p.stepsSec, 2) + ' adim/s  (her ' + p.intervalMs + ' ms de 1 adim)');
+  L.push(hasTotal
+    ? '    Toplam          : ' + fmt(p.V, 2) + ' ml icin ' + p.totalSteps + ' adim, sonra durur'
+    : '    Calisma         : surekli (hedef debide sonsuz doner)');
+  L.push('*/');
+  L.push('');
+  L.push('const int STEP_PIN = 3;');
+  L.push('const int DIR_PIN  = 4;');
+  L.push('const int EN_PIN   = 5;    // A4988 ENABLE (LOW = aktif)');
+  L.push('');
+  L.push('const unsigned long STEP_INTERVAL_MS = ' + p.intervalMs + ';');
+  if (hasTotal) L.push('const unsigned long TOPLAM_ADIM = ' + p.totalSteps + ';');
+  L.push('unsigned long lastStep = 0;');
+  if (hasTotal) L.push('unsigned long adimSayaci = 0;');
+  L.push('');
+  L.push('void setup() {');
+  L.push('  pinMode(STEP_PIN, OUTPUT);');
+  L.push('  pinMode(DIR_PIN, OUTPUT);');
+  L.push('  pinMode(EN_PIN, OUTPUT);');
+  L.push('  digitalWrite(EN_PIN, LOW);    // surucuyu aktif et');
+  L.push('  digitalWrite(DIR_PIN, HIGH);  // itme yonu (ters ise LOW yap)');
+  L.push('}');
+  L.push('');
+  L.push('void loop() {');
+  L.push('  if (millis() - lastStep >= STEP_INTERVAL_MS) {');
+  L.push('    lastStep = millis();');
+  if (hasTotal) {
+    L.push('    if (adimSayaci >= TOPLAM_ADIM) {   // dozaj tamam');
+    L.push('      digitalWrite(EN_PIN, HIGH);      // surucuyu kapat');
+    L.push('      return;');
+    L.push('    }');
+    L.push('    adimSayaci++;');
+  }
+  L.push('    digitalWrite(STEP_PIN, HIGH);');
+  L.push('    delayMicroseconds(4);');
+  L.push('    digitalWrite(STEP_PIN, LOW);');
+  L.push('  }');
+  L.push('}');
+  return L.join('\n');
+}
+function pompakodCopyCode() {
+  const txt = document.getElementById('pkCode').textContent;
+  const done = () => { const b = document.querySelector('.pk-copy'); if (b) { const o = b.textContent; b.textContent = '✓ Kopyalandı'; setTimeout(() => { b.textContent = o; }, 1500); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
+  else fallbackCopy(txt, done);
 }
 
 /* ---- PWA: telefon uygulaması desteği ---- */
