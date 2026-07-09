@@ -2074,6 +2074,9 @@ const S_TYPES = {
     { id: 'et', label: 'Et kalınlığı (mm)', def: '1' },
     { id: 'L',  label: 'Boy (mm)', def: '60' },
   ]},
+  encoder: { ico: '🧭', name: 'Encoder', color: '#ec4899', params: [
+    { id: 'cpr', label: 'Çözünürlük (sayım/dev)', def: '16384' },
+  ]},
 };
 
 let sN = [], sE = [], sNext = 1, sMode = 'move', sLinkSrc = null, sSelEdge = null;
@@ -2536,6 +2539,37 @@ function sResHTML(n, r) {
       }
     }
   }
+  if (n.type === 'encoder') {
+    const cpr = sNum(P.cpr);
+    if (cpr > 0) {
+      h += `<br>çözünürlük: <b>${fmt(cpr, 0)} sayım/dev</b> · ${fmt(360 / cpr, 4)}°/sayım`;
+      if (r.n != null) h += `<br>örnekleme: ${fmt(cpr * Math.abs(r.n) / 60, 0)} sayım/s @ ${fmt(Math.abs(r.n), 2)} d/dak`;
+      // aynı şaft kümesindeki (shaft ile bağlı) vida + pistonu bul → hacim çözünürlüğü
+      const cluster = new Set([n.id]);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const e of sE) {
+          if (e.kind !== 'shaft') continue;
+          if (cluster.has(e.from) && !cluster.has(e.to)) { cluster.add(e.to); changed = true; }
+          if (cluster.has(e.to) && !cluster.has(e.from)) { cluster.add(e.from); changed = true; }
+        }
+      }
+      const mates = [...cluster].map(id => sN.find(x => x.id === id)).filter(Boolean);
+      const scr = mates.find(x => x.type === 'vida' || x.type === 'difvida');
+      const pist = mates.find(x => x.type === 'piston');
+      if (scr && pist) {
+        let net = null;
+        if (scr.type === 'vida') net = sNum(scr.params.Ph);
+        else { const a = sNum(scr.params.Pdd), b = sNum(scr.params.Pdi); if (a != null && b != null) net = a - b; }
+        const ds = sNum(pist.params.d);
+        if (net != null && net > 0 && ds > 0) {
+          const uL = (PI / 4 * ds * ds) * (net / cpr);   // µL/sayım
+          h += `<br>💧 hacim çözünürlüğü: <b>${fmt(uL, 4)} µL/sayım</b>`;
+        }
+      }
+    }
+  }
   return h || '—';
 }
 
@@ -2584,7 +2618,7 @@ function sCalc() {
     }
     el.innerHTML = sResHTML(n, r);
     if (ico) {
-      const spinning = ['motor', 'disli', 'konik', 'sonsuz', 'kasnak', 'zincir', 'mil', 'vida', 'vidasomun', 'difvida', 'kaplin'].includes(n.type);
+      const spinning = ['motor', 'disli', 'konik', 'sonsuz', 'kasnak', 'zincir', 'mil', 'vida', 'vidasomun', 'difvida', 'kaplin', 'encoder'].includes(n.type);
       if (spinning && r.n != null && Math.abs(r.n) > 1e-9) {
         const dur = Math.max(0.4, Math.min(6, 30 / Math.abs(r.n)));
         ico.style.animation = `sspin ${dur.toFixed(2)}s linear infinite`;
