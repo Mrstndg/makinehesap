@@ -2885,6 +2885,7 @@ const KD_IN = [
   { id: 'Vres',   label: 'Rezervuar hacmi (ops.)', unit: 'ml', def: '3' },
   { id: 'bazal',  label: 'Bazal hız', unit: 'birim/saat', def: '1' },
   { id: 'bolus',  label: 'Bolus doz', unit: 'birim', def: '5' },
+  { id: 'hedef',  label: 'Hedef mikro-doz', unit: 'birim', def: '0.01' },
 ];
 function kdozHTML() {
   let fields = '';
@@ -2927,7 +2928,7 @@ function kdozCalc() {
   const num = (x) => { const f = parseFloat(String(x).replace(',', '.')); return isNaN(f) ? null : f; };
   const net = num(g('net')), ds = num(g('ds')), cpr = num(g('cpr')), doseUL = num(g('doseUL')),
         rpm = num(g('rpm')) || 0, Vres = num(g('Vres')),
-        bazal = num(g('bazal')), bolus = num(g('bolus'));
+        bazal = num(g('bazal')), bolus = num(g('bolus')), hedef = num(g('hedef'));
   const platEl = document.getElementById('kd_plat');
   const plat = platEl ? platEl.value : 'esp32';
   const res = document.getElementById('kdRes'), codeEl = document.getElementById('kdCode');
@@ -2963,6 +2964,24 @@ function kdozCalc() {
   if (bolusSec != null) rows.push(['Bolus süresi (tam hız)', fmt(bolusSec, 2), 'sn', false]);
   let h = '';
   for (const r of rows) h += `<div class="result-row ${r[3] ? 'highlight' : ''}"><div class="r-label">${r[0]}</div><div class="r-val">${r[1]}<span>${r[2]}</span></div></div>`;
+  // Hedef mikro-doz ulaşılabilirlik
+  if (hedef > 0) {
+    const countsTarget = hedef * countsDose;         // hedef için gereken sayım
+    const nCounts = Math.max(1, Math.round(countsTarget));
+    const achieved = nCounts / countsDose;           // en yakın ulaşılabilir doz
+    const errPct = (achieved - hedef) / hedef * 100;
+    const resU = 1 / countsDose;                      // 1 sayım = kaç birim
+    const ok = countsTarget >= 1;                    // en az 1 sayım = hedef ulaşılır mı
+    h += `<div class="result-row"><div class="r-label">🎯 Hedef mikro-doz</div><div class="r-val">${fmt(hedef, 4)}<span>birim</span></div></div>`;
+    h += `<div class="result-row"><div class="r-label">→ gereken sayım</div><div class="r-val">${fmt(countsTarget, 2)}<span>sayım</span></div></div>`;
+    h += `<div class="result-row"><div class="r-label">En küçük adım (1 sayım)</div><div class="r-val">${fmt(resU, 5)}<span>birim</span></div></div>`;
+    h += `<div class="result-row"><div class="r-label">En yakın ulaşılabilir</div><div class="r-val">${fmt(achieved, 4)}<span>birim</span></div></div>`;
+    if (ok) {
+      h += `<div class="pk-warn" style="background:var(--success-soft);border-color:var(--success);color:var(--success);">✓ ${fmt(hedef, 4)} birim ULAŞILIR — çözünürlüğün ${fmt(hedef / resU, 1)}× daha ince (tek atım sapması ≈ %${fmt(Math.abs(errPct), 0)}).</div>`;
+    } else {
+      h += `<div class="pk-warn">✗ ${fmt(hedef, 4)} birim tek adımdan küçük (1 sayım = ${fmt(resU, 5)} birim). Daha küçük hatve ya da daha yüksek çözünürlüklü encoder gerekir.</div>`;
+    }
+  }
   if (countsDose < 20) h += `<div class="pk-warn">⚠ Doz başına sadece ${fmt(countsDose, 1)} sayım — çözünürlük düşük. Daha küçük hatveli vida ya da daha yüksek çözünürlüklü encoder düşün.</div>`;
   res.innerHTML = h;
   codeEl.textContent = kdozGen({ net, ds, A, cpr, doseUL, rpm, uLcount, countsDose, maxMlMin, bazal, bazalCph, bolus, bolusCounts, plat });
