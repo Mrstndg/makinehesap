@@ -2883,6 +2883,8 @@ const KD_IN = [
   { id: 'doseUL', label: '1 doz birimi', unit: 'µL', def: '10' },
   { id: 'rpm',    label: 'Maks. motor devri', unit: 'd/dak', def: '30' },
   { id: 'Vres',   label: 'Rezervuar hacmi (ops.)', unit: 'ml', def: '3' },
+  { id: 'bazal',  label: 'Bazal hız', unit: 'birim/saat', def: '1' },
+  { id: 'bolus',  label: 'Bolus doz', unit: 'birim', def: '5' },
 ];
 function kdozHTML() {
   let fields = '';
@@ -2903,12 +2905,20 @@ function kdozHTML() {
     </div>
   </div>
   <div class="card" style="margin-top:18px;">
-    <h3><span class="dot"></span> Kapalı Çevrim Kodu <span style="font-weight:500;color:var(--muted);font-size:12px;margin-left:6px;">ESP32/Arduino · DRV8874 + AS5048A</span></h3>
+    <h3 style="flex-wrap:wrap;"><span class="dot"></span> Kapalı Çevrim Kodu (Bazal + Bolus)
+      <span style="margin-left:auto; display:inline-flex; align-items:center; gap:6px;">
+        <span style="font-size:12px; color:var(--muted); font-weight:600;">Kart:</span>
+        <select id="kd_plat" onchange="kdozCalc()" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:var(--font); font-size:13px; font-weight:700;">
+          <option value="esp32">ESP32-C6</option>
+          <option value="stm32">STM32G031</option>
+        </select>
+      </span>
+    </h3>
     <div class="pk-codewrap">
       <button class="pk-copy" onclick="kdozCopyCode()">📋 Kodu Kopyala</button>
       <pre class="pk-code" id="kdCode"></pre>
     </div>
-    <div class="s-help">🔌 DRV8874: PH→D6 (yön), EN→D5 (PWM) · AS5048A: SPI (CS→D10, SCK/MISO/MOSI donanım SPI). ⚠ Kod bir <b>başlangıç iskeleti</b>dir — encoder okuması ve PWM'i kendi kartında test edip ayarla.</div>
+    <div class="s-help">🔌 DRV8874: PH (yön) + EN (PWM) · AS5048A: donanım SPI (CS + SCK/MISO/MOSI). İki çipli mimaride <b>STM32G031</b> gerçek zamanlı motor/encoder kontrolünü, <b>ESP32-C6</b> kablosuz (BLE) tarafını yürütür. ⚠ Kod bir <b>başlangıç iskeleti</b>dir — encoder okuması/PWM'i kartında test et.</div>
   </div>`;
 }
 function kdozInit() { kdozCalc(); }
@@ -2916,7 +2926,10 @@ function kdozCalc() {
   const g = (id) => { const el = document.getElementById('kd_' + id); return el ? el.value : ''; };
   const num = (x) => { const f = parseFloat(String(x).replace(',', '.')); return isNaN(f) ? null : f; };
   const net = num(g('net')), ds = num(g('ds')), cpr = num(g('cpr')), doseUL = num(g('doseUL')),
-        rpm = num(g('rpm')) || 0, Vres = num(g('Vres'));
+        rpm = num(g('rpm')) || 0, Vres = num(g('Vres')),
+        bazal = num(g('bazal')), bolus = num(g('bolus'));
+  const platEl = document.getElementById('kd_plat');
+  const plat = platEl ? platEl.value : 'esp32';
   const res = document.getElementById('kdRes'), codeEl = document.getElementById('kdCode');
   if (!res || !codeEl) return;
   if (!(net > 0 && ds > 0 && cpr > 0 && doseUL > 0)) {
@@ -2931,48 +2944,67 @@ function kdozCalc() {
   const maxMlMin = A * net * rpm / 1000;    // ml/dak (maks)
   const resUnits = Vres > 0 ? Vres * 1000 / doseUL : null;
   const emptySec = (Vres > 0 && maxMlMin > 0) ? Vres / maxMlMin * 60 : null;
+  // dozaj profili
+  const bazalCph = (bazal > 0) ? bazal * countsDose : null;               // bazal sayım/saat
+  const bazalSecPerCount = (bazalCph > 0) ? 3600 / bazalCph : null;       // 1 sayım kaç sn'de
+  const bolusCounts = (bolus > 0) ? bolus * countsDose : null;
+  const countsSecMax = cpr * rpm / 60;                                     // maks sayım/s
+  const bolusSec = (bolusCounts > 0 && countsSecMax > 0) ? bolusCounts / countsSecMax : null;
   const rows = [
     ['Doğrusal çözünürlük', fmt(mmCount * 1000, 4), 'µm/sayım', false],
     ['Dozaj çözünürlüğü', fmt(uLcount, 4), 'µL/sayım', true],
     ['1 doz birimi', fmt(countsDose, 1), 'sayım', true],
     ['Maks. debi', fmt(maxMlMin, 3), 'ml/dak', false],
-    ['Maks. debi', fmt(maxMlMin * 60, 1), 'ml/saat', false],
   ];
   if (resUnits != null) rows.push(['Rezervuar kapasitesi', fmt(resUnits, 0), 'doz birimi', true]);
-  if (emptySec != null) rows.push(['Tam hızda boşalma', fmt(emptySec, 1), 'sn', false]);
+  if (bazalCph != null) rows.push(['Bazal akış', fmt(bazalCph, 0), 'sayım/saat', true]);
+  if (bazalSecPerCount != null) rows.push(['Bazal — sayım aralığı', fmt(bazalSecPerCount, 1), 'sn/sayım', false]);
+  if (bolusCounts != null) rows.push(['Bolus (' + fmt(bolus, 1) + ' birim)', fmt(bolusCounts, 0), 'sayım', true]);
+  if (bolusSec != null) rows.push(['Bolus süresi (tam hız)', fmt(bolusSec, 2), 'sn', false]);
   let h = '';
   for (const r of rows) h += `<div class="result-row ${r[3] ? 'highlight' : ''}"><div class="r-label">${r[0]}</div><div class="r-val">${r[1]}<span>${r[2]}</span></div></div>`;
   if (countsDose < 20) h += `<div class="pk-warn">⚠ Doz başına sadece ${fmt(countsDose, 1)} sayım — çözünürlük düşük. Daha küçük hatveli vida ya da daha yüksek çözünürlüklü encoder düşün.</div>`;
   res.innerHTML = h;
-  codeEl.textContent = kdozGen({ net, ds, A, cpr, doseUL, rpm, uLcount, countsDose, maxMlMin });
+  codeEl.textContent = kdozGen({ net, ds, A, cpr, doseUL, rpm, uLcount, countsDose, maxMlMin, bazal, bazalCph, bolus, bolusCounts, plat });
 }
 function kdozGen(p) {
   const cpu = Math.round(p.countsDose);
+  const bph = (p.bazalCph && p.bazalCph > 0) ? Math.round(p.bazalCph) : 0;
+  const stm = p.plat === 'stm32';
+  const pins = stm
+    ? { cs: 'PA4', ph: 'PB0', en: 'PA8', note: 'STM32G031 (STM32duino) · SPI1: SCK=PA5 MISO=PA6 MOSI=PA7' }
+    : { cs: '10',  ph: '6',   en: '5',  note: 'ESP32-C6 (Arduino) · donanim SPI: SCK/MISO/MOSI' };
   const L = [];
-  L.push('/*  MakineHesap · Kapali Cevrim Dozaj  —  gdntsrm.com');
-  L.push('    DC motor + AS5048A encoder + DRV8874 surucu (PH/EN modu)');
+  L.push('/*  MakineHesap · Kapali Cevrim Dozaj (Bazal + Bolus)  —  gdntsrm.com');
+  L.push('    Kart : ' + (stm ? 'STM32G031  (ana kontrol — motor + encoder)' : 'ESP32-C6  (Arduino)'));
+  L.push('    DC motor + AS5048A encoder + DRV8874 (PH/EN)');
+  L.push('    ' + pins.note);
   L.push('    ------------------------------------------------------------');
-  L.push('    Net ilerleme  : ' + fmt(p.net, 3) + ' mm/dev   Piston: ' + fmt(p.ds, 2) + ' mm (' + fmt(p.A, 1) + ' mm2)');
-  L.push('    Encoder       : ' + fmt(p.cpr, 0) + ' sayim/dev  ->  ' + fmt(p.uLcount, 4) + ' uL/sayim');
-  L.push('    1 doz birimi  : ' + fmt(p.doseUL, 2) + ' uL  =  ' + cpu + ' sayim');
+  L.push('    Cozunurluk : ' + fmt(p.uLcount, 4) + ' uL/sayim   (1 birim = ' + cpu + ' sayim)');
+  L.push('    Bazal      : ' + fmt(p.bazal || 0, 2) + ' birim/saat = ' + bph + ' sayim/saat');
+  L.push('    Bolus ornk : ' + fmt(p.bolus || 0, 2) + ' birim = ' + Math.round(p.bolusCounts || 0) + ' sayim');
   L.push('    NOT: encoder okuma + PWM kartinda TEST/AYAR gerektirir (iskelet kod).');
+  if (stm) L.push('    Ikili mimari: ESP32-C6 BLE ile bolus komutunu UART uzerinden gonderir.');
   L.push('*/');
   L.push('#include <SPI.h>');
   L.push('');
-  L.push('const int ENC_CS   = 10;   // AS5048A chip select');
-  L.push('const int MOTOR_PH = 6;    // DRV8874 PH (yon)');
-  L.push('const int MOTOR_EN = 5;    // DRV8874 EN (PWM hiz)');
+  L.push('const int ENC_CS   = ' + pins.cs + ';   // AS5048A CS');
+  L.push('const int MOTOR_PH = ' + pins.ph + ';   // DRV8874 PH (yon)');
+  L.push('const int MOTOR_EN = ' + pins.en + ';   // DRV8874 EN (PWM)');
   L.push('');
-  L.push('const long COUNTS_PER_UNIT = ' + cpu + ';   // 1 doz birimi = kac sayim');
-  L.push('const int  DOZAJ_PWM = 180;                 // 0-255 dozaj hizi');
+  L.push('const long  COUNTS_PER_UNIT  = ' + cpu + ';    // 1 doz birimi');
+  L.push('const float BAZAL_SAYIM_SAAT = ' + bph + ';    // bazal sayim/saat');
+  L.push('const int   DOZAJ_PWM = 180;                   // 0-255 dozaj hizi');
   L.push('');
-  L.push('long cumCount = 0;   // kumulatif konum');
-  L.push('int  lastRaw  = 0;');
+  L.push('long cumCount   = 0;    // kumulatif konum (sayim)');
+  L.push('long bolusHedef = 0;    // biriken bolus sayimi');
+  L.push('int  lastRaw = 0;');
+  L.push('unsigned long t0 = 0;   // baslangic zamani');
   L.push('');
-  L.push('int readAngle() {    // AS5048A 14-bit aci (0..16383)');
+  L.push('int readAngle() {   // AS5048A 14-bit (0..16383)');
   L.push('  SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE1));');
   L.push('  digitalWrite(ENC_CS, LOW);');
-  L.push('  uint16_t v = SPI.transfer16(0xFFFF);   // aci okuma komutu');
+  L.push('  uint16_t v = SPI.transfer16(0xFFFF);');
   L.push('  digitalWrite(ENC_CS, HIGH);');
   L.push('  SPI.endTransaction();');
   L.push('  return v & 0x3FFF;');
@@ -2987,25 +3019,28 @@ function kdozGen(p) {
   L.push('  lastRaw = raw;');
   L.push('}');
   L.push('');
-  L.push('void dozVer(float birim) {                 // "birim" kadar doz ver');
-  L.push('  long hedef = cumCount + (long)(birim * COUNTS_PER_UNIT);');
-  L.push('  digitalWrite(MOTOR_PH, HIGH);            // itme yonu');
-  L.push('  analogWrite(MOTOR_EN, DOZAJ_PWM);        // motoru dondur');
-  L.push('  while (cumCount < hedef) updatePosition();');
-  L.push('  analogWrite(MOTOR_EN, 0);                // hedefe ulasildi, dur');
+  L.push('void bolusVer(float birim) {          // bir bolus doz ekle (BLE/buton)');
+  L.push('  bolusHedef += (long)(birim * COUNTS_PER_UNIT);');
   L.push('}');
   L.push('');
   L.push('void setup() {');
   L.push('  pinMode(ENC_CS, OUTPUT); digitalWrite(ENC_CS, HIGH);');
-  L.push('  pinMode(MOTOR_PH, OUTPUT);');
+  L.push('  pinMode(MOTOR_PH, OUTPUT); digitalWrite(MOTOR_PH, HIGH);  // itme yonu');
   L.push('  pinMode(MOTOR_EN, OUTPUT); analogWrite(MOTOR_EN, 0);');
   L.push('  SPI.begin();');
   L.push('  lastRaw = readAngle();');
+  L.push('  t0 = millis();');
   L.push('}');
   L.push('');
   L.push('void loop() {');
-  L.push('  dozVer(2.0);      // ornek: 2 birim bolus');
-  L.push('  delay(60000);     // ornek: 1 dk bekle');
+  L.push('  updatePosition();');
+  L.push('  // Hedef = zamana bagli bazal + biriken bolus');
+  L.push('  float saat = (millis() - t0) / 3600000.0;');
+  L.push('  long hedef = (long)(saat * BAZAL_SAYIM_SAAT) + bolusHedef;');
+  L.push('  if (cumCount < hedef) analogWrite(MOTOR_EN, DOZAJ_PWM);   // motoru surur');
+  L.push('  else                  analogWrite(MOTOR_EN, 0);           // hedefte, durur');
+  L.push('');
+  L.push('  // Bolus komutu gelince (ornek):  bolusVer(' + fmt(p.bolus || 1, 1) + ');');
   L.push('}');
   return L.join('\n');
 }
