@@ -1069,19 +1069,10 @@ const CALCS = {
     }
   },
 
-  pompakod: {
-    ico: '🔌', cat: 'Elektronik & Kontrol',
-    title: 'Pompa Kontrol (Arduino)',
-    desc: 'Step motorlu dozaj pompan için ml/adım çözünürlüğünü, adım zamanlamasını ve HAZIR Arduino kodunu üretir (A4988/DRV8825 sürücü). Hedef dozajı gir, kodu kopyala, karta yükle.',
-    custom: true,
-    render: () => pompakodHTML(),
-    init: () => pompakodInit(),
-  },
-
   kapalidozaj: {
     ico: '🧭', cat: 'Elektronik & Kontrol',
-    title: 'Kapalı Çevrim Dozaj (Encoder)',
-    desc: 'DC motor + manyetik encoder (AS5048A) + DRV8874 sürücü ile hassas dozaj. Vidanın net ilerlemesi, piston çapı ve encoder çözünürlüğünden µL/sayım, doz birimi başına sayım ve maks. debiyi hesaplar; kapalı çevrim ESP32/Arduino kod iskeletini üretir.',
+    title: 'Dozaj Çözünürlüğü (Encoder)',
+    desc: 'DC motor + manyetik encoder (AS5048A) ile hassas dozaj hesabı. Vidanın net ilerlemesi, piston çapı ve encoder çözünürlüğünden µL/sayım, doz birimi başına sayım, maks. debi ve bazal/bolus profilini hesaplar; hedef mikro-dozuna (ör. 0,01 U) ulaşıp ulaşmadığını söyler.',
     custom: true,
     render: () => kdozHTML(),
     init: () => kdozInit(),
@@ -2739,142 +2730,6 @@ function terspompaToSchema() {
   sCalc();
 }
 
-/* =======================  POMPA KONTROL (ARDUINO)  ======================= */
-const PK_IN = [
-  { id: 'Q',     label: 'Hedef dozaj', unit: 'ml/saat', def: '5' },
-  { id: 'V',     label: 'Toplam hacim (ops. → bitince dur)', unit: 'ml', def: '' },
-  { id: 'ds',    label: 'Şırınga iç çapı', unit: 'mm', def: '15' },
-  { id: 'pitch', label: 'Vida hatvesi', unit: 'mm/dev', def: '1' },
-  { id: 'sRev',  label: 'Motor adım/devir', unit: 'adım', def: '200' },
-  { id: 'gear',  label: 'Dişli oranı (yoksa 1)', unit: '', def: '1' },
-];
-function pompakodHTML() {
-  let fields = '';
-  for (const p of PK_IN) {
-    fields += `<div class="field"><label>${p.label}</label><div class="input-wrap">
-      <input id="pk_${p.id}" type="text" inputmode="decimal" value="${p.def}" oninput="pompakodCalc()" />
-      ${p.unit ? `<span class="unit">${p.unit}</span>` : ''}</div></div>`;
-  }
-  const microOpts = [1, 2, 4, 8, 16, 32].map(m => `<option value="${m}" ${m === 16 ? 'selected' : ''}>1/${m}</option>`).join('');
-  return `
-  <div class="panels">
-    <div class="card">
-      <h3><span class="dot"></span> Pompa & Motor</h3>
-      <div class="pk-grid">
-        ${fields}
-        <div class="field"><label>Mikro adım (sürücü)</label><div class="input-wrap">
-          <select id="pk_micro" onchange="pompakodCalc()">${microOpts}</select></div></div>
-      </div>
-    </div>
-    <div class="card">
-      <h3><span class="dot"></span> Sonuç</h3>
-      <div class="pk-res" id="pkRes"></div>
-    </div>
-  </div>
-  <div class="card" style="margin-top:18px;">
-    <h3><span class="dot"></span> Arduino Kodu <span style="font-weight:500;color:var(--muted);font-size:12px;margin-left:6px;">A4988 / DRV8825 sürücü</span></h3>
-    <div class="pk-codewrap">
-      <button class="pk-copy" onclick="pompakodCopyCode()">📋 Kodu Kopyala</button>
-      <pre class="pk-code" id="pkCode"></pre>
-    </div>
-    <div class="s-help">🔌 Bağlantı: STEP→D3, DIR→D4, ENABLE→D5 · sürücünün VMOT ucuna motor beslemesi, GND ortak. Yön ters çıkarsa koddaki DIR'i LOW yap.</div>
-  </div>`;
-}
-function pompakodInit() { pompakodCalc(); }
-function pompakodCalc() {
-  const g = (id) => { const el = document.getElementById('pk_' + id); return el ? el.value : ''; };
-  const num = (x) => { const f = parseFloat(String(x).replace(',', '.')); return isNaN(f) ? null : f; };
-  const Q = num(g('Q')), V = num(g('V')), ds = num(g('ds')), pitch = num(g('pitch')),
-        sRev = num(g('sRev')), gear = num(g('gear')) || 1, micro = num(g('micro')) || 1;
-  const res = document.getElementById('pkRes'), codeEl = document.getElementById('pkCode');
-  if (!res || !codeEl) return;
-  if (!(Q > 0 && ds > 0 && pitch > 0 && sRev > 0)) {
-    res.innerHTML = '<div class="empty">Değerleri gir; çözünürlük, zamanlama ve kod burada oluşacak. 👇</div>';
-    codeEl.textContent = '// Geçerli değerler girince Arduino kodu burada oluşur…';
-    return;
-  }
-  const A = PI / 4 * ds * ds;
-  const effSteps = sRev * micro * gear;
-  const mmStep = pitch / effSteps;
-  const mlStep = A * mmStep / 1000;
-  const ulStep = mlStep * 1000;
-  const stepsSec = (Q / mlStep) / 3600;
-  const intervalMsRaw = 1000 / stepsSec;
-  const intervalMs = Math.max(1, Math.round(intervalMsRaw));
-  const totalSteps = (V > 0) ? Math.round(V / mlStep) : null;
-  const rows = [
-    ['Efektif çözünürlük', fmt(effSteps, 0), 'adım/dev', false],
-    ['Doğrusal adım', fmt(mmStep * 1000, 4), 'µm/adım', false],
-    ['Dozaj çözünürlüğü', fmt(ulStep, 4), 'µL/adım', true],
-    ['Adım hızı', fmt(stepsSec, 2), 'adım/s', false],
-    ['Adım aralığı', fmt(intervalMs, 0), 'ms', true],
-  ];
-  if (totalSteps != null) rows.push(['Toplam adım (' + fmt(V, 1) + ' ml)', fmt(totalSteps, 0), 'adım', true]);
-  let h = '';
-  for (const r of rows) h += `<div class="result-row ${r[3] ? 'highlight' : ''}"><div class="r-label">${r[0]}</div><div class="r-val">${r[1]}<span>${r[2]}</span></div></div>`;
-  if (intervalMsRaw < 2) h += `<div class="pk-warn">⚠ Adımlar çok sık (${fmt(intervalMsRaw, 2)} ms). Mikro adımı azalt ya da dişli oranını düşür — millis() 1 ms altını tutamaz.</div>`;
-  else if (intervalMs > 60000) h += `<div class="pk-warn">ℹ Çok yavaş dozaj: her adım ${fmt(intervalMs / 1000, 1)} s'de bir. Çalışır ama şırınga çok küçük adımlarla ilerler.</div>`;
-  res.innerHTML = h;
-  codeEl.textContent = pompakodGen({ Q, V, ds, A, pitch, sRev, micro, gear, effSteps, ulStep, stepsSec, intervalMs, totalSteps });
-}
-function pompakodGen(p) {
-  const hasTotal = p.totalSteps != null;
-  const L = [];
-  L.push('/*  MakineHesap · Dozaj Pompasi kontrol kodu  —  gdntsrm.com');
-  L.push('    Step motor + A4988/DRV8825 surucu');
-  L.push('    -------------------------------------------------');
-  L.push('    Hedef dozaj     : ' + fmt(p.Q, 3) + ' ml/saat');
-  L.push('    Siringa ic capi : ' + fmt(p.ds, 2) + ' mm  (kesit ' + fmt(p.A, 1) + ' mm2)');
-  L.push('    Vida hatvesi    : ' + fmt(p.pitch, 3) + ' mm/dev');
-  L.push('    Motor           : ' + fmt(p.sRev, 0) + ' adim/dev x 1/' + p.micro + ' x ' + fmt(p.gear, 2) + ' disli');
-  L.push('    Efektif         : ' + fmt(p.effSteps, 0) + ' adim/dev  ->  ' + fmt(p.ulStep, 4) + ' uL/adim');
-  L.push('    Zamanlama       : ' + fmt(p.stepsSec, 2) + ' adim/s  (her ' + p.intervalMs + ' ms de 1 adim)');
-  L.push(hasTotal
-    ? '    Toplam          : ' + fmt(p.V, 2) + ' ml icin ' + p.totalSteps + ' adim, sonra durur'
-    : '    Calisma         : surekli (hedef debide sonsuz doner)');
-  L.push('*/');
-  L.push('');
-  L.push('const int STEP_PIN = 3;');
-  L.push('const int DIR_PIN  = 4;');
-  L.push('const int EN_PIN   = 5;    // A4988 ENABLE (LOW = aktif)');
-  L.push('');
-  L.push('const unsigned long STEP_INTERVAL_MS = ' + p.intervalMs + ';');
-  if (hasTotal) L.push('const unsigned long TOPLAM_ADIM = ' + p.totalSteps + ';');
-  L.push('unsigned long lastStep = 0;');
-  if (hasTotal) L.push('unsigned long adimSayaci = 0;');
-  L.push('');
-  L.push('void setup() {');
-  L.push('  pinMode(STEP_PIN, OUTPUT);');
-  L.push('  pinMode(DIR_PIN, OUTPUT);');
-  L.push('  pinMode(EN_PIN, OUTPUT);');
-  L.push('  digitalWrite(EN_PIN, LOW);    // surucuyu aktif et');
-  L.push('  digitalWrite(DIR_PIN, HIGH);  // itme yonu (ters ise LOW yap)');
-  L.push('}');
-  L.push('');
-  L.push('void loop() {');
-  L.push('  if (millis() - lastStep >= STEP_INTERVAL_MS) {');
-  L.push('    lastStep = millis();');
-  if (hasTotal) {
-    L.push('    if (adimSayaci >= TOPLAM_ADIM) {   // dozaj tamam');
-    L.push('      digitalWrite(EN_PIN, HIGH);      // surucuyu kapat');
-    L.push('      return;');
-    L.push('    }');
-    L.push('    adimSayaci++;');
-  }
-  L.push('    digitalWrite(STEP_PIN, HIGH);');
-  L.push('    delayMicroseconds(4);');
-  L.push('    digitalWrite(STEP_PIN, LOW);');
-  L.push('  }');
-  L.push('}');
-  return L.join('\n');
-}
-function pompakodCopyCode() {
-  const txt = document.getElementById('pkCode').textContent;
-  const done = () => { const b = document.querySelector('.pk-copy'); if (b) { const o = b.textContent; b.textContent = '✓ Kopyalandı'; setTimeout(() => { b.textContent = o; }, 1500); } };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
-  else fallbackCopy(txt, done);
-}
-
 /* =======================  KAPALI ÇEVRİM DOZAJ (ENCODER)  ======================= */
 const KD_IN = [
   { id: 'net',    label: 'Vida net ilerleme', unit: 'mm/dev', def: '4.0' },
@@ -2901,25 +2756,9 @@ function kdozHTML() {
       <div class="pk-grid">${fields}</div>
     </div>
     <div class="card">
-      <h3><span class="dot"></span> Çözünürlük & Debi</h3>
+      <h3><span class="dot"></span> Çözünürlük & Dozaj</h3>
       <div class="pk-res" id="kdRes"></div>
     </div>
-  </div>
-  <div class="card" style="margin-top:18px;">
-    <h3 style="flex-wrap:wrap;"><span class="dot"></span> Kapalı Çevrim Kodu (Bazal + Bolus)
-      <span style="margin-left:auto; display:inline-flex; align-items:center; gap:6px;">
-        <span style="font-size:12px; color:var(--muted); font-weight:600;">Kart:</span>
-        <select id="kd_plat" onchange="kdozCalc()" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font-family:var(--font); font-size:13px; font-weight:700;">
-          <option value="esp32">ESP32-C6</option>
-          <option value="stm32">STM32G031</option>
-        </select>
-      </span>
-    </h3>
-    <div class="pk-codewrap">
-      <button class="pk-copy" onclick="kdozCopyCode()">📋 Kodu Kopyala</button>
-      <pre class="pk-code" id="kdCode"></pre>
-    </div>
-    <div class="s-help">🔌 DRV8874: PH (yön) + EN (PWM) · AS5048A: donanım SPI (CS + SCK/MISO/MOSI). İki çipli mimaride <b>STM32G031</b> gerçek zamanlı motor/encoder kontrolünü, <b>ESP32-C6</b> kablosuz (BLE) tarafını yürütür. ⚠ Kod bir <b>başlangıç iskeleti</b>dir — encoder okuması/PWM'i kartında test et.</div>
   </div>`;
 }
 function kdozInit() { kdozCalc(); }
@@ -2929,13 +2768,10 @@ function kdozCalc() {
   const net = num(g('net')), ds = num(g('ds')), cpr = num(g('cpr')), doseUL = num(g('doseUL')),
         rpm = num(g('rpm')) || 0, Vres = num(g('Vres')),
         bazal = num(g('bazal')), bolus = num(g('bolus')), hedef = num(g('hedef'));
-  const platEl = document.getElementById('kd_plat');
-  const plat = platEl ? platEl.value : 'esp32';
-  const res = document.getElementById('kdRes'), codeEl = document.getElementById('kdCode');
-  if (!res || !codeEl) return;
+  const res = document.getElementById('kdRes');
+  if (!res) return;
   if (!(net > 0 && ds > 0 && cpr > 0 && doseUL > 0)) {
-    res.innerHTML = '<div class="empty">Değerleri gir; çözünürlük, sayım/doz ve kod burada oluşacak. 👇</div>';
-    codeEl.textContent = '// Geçerli değerler girince kapalı çevrim kodu burada oluşur…';
+    res.innerHTML = '<div class="empty">Değerleri gir; çözünürlük, sayım/doz ve dozaj profili burada oluşacak. 👇</div>';
     return;
   }
   const A = PI / 4 * ds * ds;               // mm²
@@ -2984,90 +2820,6 @@ function kdozCalc() {
   }
   if (countsDose < 20) h += `<div class="pk-warn">⚠ Doz başına sadece ${fmt(countsDose, 1)} sayım — çözünürlük düşük. Daha küçük hatveli vida ya da daha yüksek çözünürlüklü encoder düşün.</div>`;
   res.innerHTML = h;
-  codeEl.textContent = kdozGen({ net, ds, A, cpr, doseUL, rpm, uLcount, countsDose, maxMlMin, bazal, bazalCph, bolus, bolusCounts, plat });
-}
-function kdozGen(p) {
-  const cpu = Math.round(p.countsDose);
-  const bph = (p.bazalCph && p.bazalCph > 0) ? Math.round(p.bazalCph) : 0;
-  const stm = p.plat === 'stm32';
-  const pins = stm
-    ? { cs: 'PA4', ph: 'PB0', en: 'PA8', note: 'STM32G031 (STM32duino) · SPI1: SCK=PA5 MISO=PA6 MOSI=PA7' }
-    : { cs: '10',  ph: '6',   en: '5',  note: 'ESP32-C6 (Arduino) · donanim SPI: SCK/MISO/MOSI' };
-  const L = [];
-  L.push('/*  MakineHesap · Kapali Cevrim Dozaj (Bazal + Bolus)  —  gdntsrm.com');
-  L.push('    Kart : ' + (stm ? 'STM32G031  (ana kontrol — motor + encoder)' : 'ESP32-C6  (Arduino)'));
-  L.push('    DC motor + AS5048A encoder + DRV8874 (PH/EN)');
-  L.push('    ' + pins.note);
-  L.push('    ------------------------------------------------------------');
-  L.push('    Cozunurluk : ' + fmt(p.uLcount, 4) + ' uL/sayim   (1 birim = ' + cpu + ' sayim)');
-  L.push('    Bazal      : ' + fmt(p.bazal || 0, 2) + ' birim/saat = ' + bph + ' sayim/saat');
-  L.push('    Bolus ornk : ' + fmt(p.bolus || 0, 2) + ' birim = ' + Math.round(p.bolusCounts || 0) + ' sayim');
-  L.push('    NOT: encoder okuma + PWM kartinda TEST/AYAR gerektirir (iskelet kod).');
-  if (stm) L.push('    Ikili mimari: ESP32-C6 BLE ile bolus komutunu UART uzerinden gonderir.');
-  L.push('*/');
-  L.push('#include <SPI.h>');
-  L.push('');
-  L.push('const int ENC_CS   = ' + pins.cs + ';   // AS5048A CS');
-  L.push('const int MOTOR_PH = ' + pins.ph + ';   // DRV8874 PH (yon)');
-  L.push('const int MOTOR_EN = ' + pins.en + ';   // DRV8874 EN (PWM)');
-  L.push('');
-  L.push('const long  COUNTS_PER_UNIT  = ' + cpu + ';    // 1 doz birimi');
-  L.push('const float BAZAL_SAYIM_SAAT = ' + bph + ';    // bazal sayim/saat');
-  L.push('const int   DOZAJ_PWM = 180;                   // 0-255 dozaj hizi');
-  L.push('');
-  L.push('long cumCount   = 0;    // kumulatif konum (sayim)');
-  L.push('long bolusHedef = 0;    // biriken bolus sayimi');
-  L.push('int  lastRaw = 0;');
-  L.push('unsigned long t0 = 0;   // baslangic zamani');
-  L.push('');
-  L.push('int readAngle() {   // AS5048A 14-bit (0..16383)');
-  L.push('  SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE1));');
-  L.push('  digitalWrite(ENC_CS, LOW);');
-  L.push('  uint16_t v = SPI.transfer16(0xFFFF);');
-  L.push('  digitalWrite(ENC_CS, HIGH);');
-  L.push('  SPI.endTransaction();');
-  L.push('  return v & 0x3FFF;');
-  L.push('}');
-  L.push('');
-  L.push('void updatePosition() {   // sarma (wrap) yonetimi');
-  L.push('  int raw = readAngle();');
-  L.push('  int d = raw - lastRaw;');
-  L.push('  if (d >  8192) d -= 16384;');
-  L.push('  if (d < -8192) d += 16384;');
-  L.push('  cumCount += d;');
-  L.push('  lastRaw = raw;');
-  L.push('}');
-  L.push('');
-  L.push('void bolusVer(float birim) {          // bir bolus doz ekle (BLE/buton)');
-  L.push('  bolusHedef += (long)(birim * COUNTS_PER_UNIT);');
-  L.push('}');
-  L.push('');
-  L.push('void setup() {');
-  L.push('  pinMode(ENC_CS, OUTPUT); digitalWrite(ENC_CS, HIGH);');
-  L.push('  pinMode(MOTOR_PH, OUTPUT); digitalWrite(MOTOR_PH, HIGH);  // itme yonu');
-  L.push('  pinMode(MOTOR_EN, OUTPUT); analogWrite(MOTOR_EN, 0);');
-  L.push('  SPI.begin();');
-  L.push('  lastRaw = readAngle();');
-  L.push('  t0 = millis();');
-  L.push('}');
-  L.push('');
-  L.push('void loop() {');
-  L.push('  updatePosition();');
-  L.push('  // Hedef = zamana bagli bazal + biriken bolus');
-  L.push('  float saat = (millis() - t0) / 3600000.0;');
-  L.push('  long hedef = (long)(saat * BAZAL_SAYIM_SAAT) + bolusHedef;');
-  L.push('  if (cumCount < hedef) analogWrite(MOTOR_EN, DOZAJ_PWM);   // motoru surur');
-  L.push('  else                  analogWrite(MOTOR_EN, 0);           // hedefte, durur');
-  L.push('');
-  L.push('  // Bolus komutu gelince (ornek):  bolusVer(' + fmt(p.bolus || 1, 1) + ');');
-  L.push('}');
-  return L.join('\n');
-}
-function kdozCopyCode() {
-  const txt = document.getElementById('kdCode').textContent;
-  const done = () => { const btn = document.querySelector('#content .pk-copy'); if (btn) { const o = btn.textContent; btn.textContent = '✓ Kopyalandı'; setTimeout(() => { btn.textContent = o; }, 1500); } };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
-  else fallbackCopy(txt, done);
 }
 
 /* ---- PWA: telefon uygulaması desteği ---- */

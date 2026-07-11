@@ -1,5 +1,5 @@
 /* MakineHesap — Servis Çalışanı (çevrimdışı destek) */
-const CACHE = 'makinehesap-v34';
+const CACHE = 'makinehesap-v35';
 const ASSETS = [
   'index.html',
   'manifest.json',
