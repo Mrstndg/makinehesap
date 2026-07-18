@@ -1,7 +1,7 @@
 {
-  "name": "MakineHesap · Makine Elemanları Hesaplama",
+  "name": "MakineHesap · Hesaplama ve 3B Simülasyon",
   "short_name": "MakineHesap",
-  "description": "Makine elemanları ve mekanizmalar için kolay ve şık hesaplama uygulaması.",
+  "description": "Makine elemanları hesaplama araçları ve MekSim 3B mekanik montaj/simülasyon platformu tek uygulamada.",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",

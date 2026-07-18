@@ -1,5 +1,5 @@
 /* MakineHesap — Servis Çalışanı (çevrimdışı destek) */
-const CACHE = 'makinehesap-v35';
+const CACHE = 'makinehesap-v36';
 const ASSETS = [
   'index.html',
   'manifest.json',
@@ -9,6 +9,11 @@ const ASSETS = [
   'vendor/three.module.min.js',
   'vendor/addons/controls/OrbitControls.js',
   'vendor/addons/environments/RoomEnvironment.js',
+  // MekSim — sitenin /meksim/ bolumu
+  'meksim/index.html',
+  'meksim/lib/three.module.js',
+  'meksim/lib/addons/controls/OrbitControls.js',
+  'meksim/lib/addons/controls/TransformControls.js',
 ];
 
 // Kurulum: dosyaları önbelleğe al

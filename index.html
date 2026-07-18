@@ -129,6 +129,9 @@
   .nav-item:hover { background: var(--surface); color: var(--text); }
   .nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 6px 14px rgba(124,58,237,.3); }
   .nav-item .ico { font-size: 18px; width: 22px; text-align: center; }
+  /* Kardeş uygulamaya geçiş — nav'ın altında, JS ile üretilmez */
+  .nav-meksim { text-decoration: none; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 14px; border-radius: 0 0 11px 11px; }
+  .nav-meksim:hover { background: var(--surface); color: var(--text); }
 
   .main { padding: 30px 38px 70px; min-width: 0; }
   .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; gap: 16px; flex-wrap: wrap; }
@@ -532,7 +535,7 @@
 <body data-theme="dark">
 <noscript>
   <p>MakineHesap, makine elemanları için Türkçe hazırlanmış çevrimdışı çalışan bir hesaplama ve tasarım uygulamasıdır. Dişli, kayış-kasnak, zincir, yay, rulman ve civata hesaplarının yanı sıra 3B atölye, dijital kumpas ve güç aktarım şeması araçlarını içerir.</p>
-  <p>Kardeş uygulama: <a href="https://meksim.gdntsrm.com">MekSim — 3B mekanik montaj ve simülasyon</a></p>
+  <p>Kardeş uygulama: <a href="meksim/">MekSim — 3B mekanik montaj ve simülasyon</a></p>
 </noscript>
 
 <!-- Sitenin sabit 3D arka planı -->
@@ -548,6 +551,7 @@
     <p class="intro-tag">Makine Elemanları &amp; Mekanizmalar<br>Hesaplama · Simülasyon · Ölçme</p>
     <div class="intro-chips">
       <span>🧊 3D Atölye</span>
+      <span>🧩 3B Simülasyon</span>
       <span>🛞 Güç İletimi</span>
       <span>🔩 Bağlama</span>
       <span>📏 Kumpas</span>
@@ -570,6 +574,10 @@
       </div>
     </div>
     <nav id="nav"></nav>
+    <a class="nav-item nav-meksim" href="meksim/">
+      <span class="ico">🧩</span>
+      <span>MekSim — 3B Simülasyon</span>
+    </a>
     <div class="side-foot">
       <a href="https://gdntsrm.com" target="_blank" rel="noopener">🌐 gdntsrm.com</a>
       <small>MakineHesap © 2026</small>
