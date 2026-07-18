@@ -129,9 +129,12 @@
   .nav-item:hover { background: var(--surface); color: var(--text); }
   .nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 6px 14px rgba(124,58,237,.3); }
   .nav-item .ico { font-size: 18px; width: 22px; text-align: center; }
-  /* Kardeş uygulamaya geçiş — nav'ın altında, JS ile üretilmez */
-  .nav-meksim { text-decoration: none; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 14px; border-radius: 0 0 11px 11px; }
-  .nav-meksim:hover { background: var(--surface); color: var(--text); }
+  /* Kardeş uygulamaya geçiş — nav'ın ÜSTÜNDE (ilk bakışta görünsün), JS ile üretilmez */
+  .nav-meksim {
+    text-decoration: none; margin-bottom: 10px; padding-top: 11px; padding-bottom: 11px;
+    background: var(--surface); border: 1px solid var(--border); font-weight: 700; color: var(--text);
+  }
+  .nav-meksim:hover { border-color: var(--primary); color: var(--primary); }
 
   .main { padding: 30px 38px 70px; min-width: 0; }
   .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; gap: 16px; flex-wrap: wrap; }
@@ -573,11 +576,11 @@
         <small>Makine Elemanları & Mekanizmalar</small>
       </div>
     </div>
-    <nav id="nav"></nav>
     <a class="nav-item nav-meksim" href="meksim/">
       <span class="ico">🧩</span>
       <span>MekSim — 3B Simülasyon</span>
     </a>
+    <nav id="nav"></nav>
     <div class="side-foot">
       <a href="https://gdntsrm.com" target="_blank" rel="noopener">🌐 gdntsrm.com</a>
       <small>MakineHesap © 2026</small>
