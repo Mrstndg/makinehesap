@@ -434,6 +434,13 @@
   }
   .intro-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
   .intro-btn:active { transform: scale(.97); }
+  /* Giriş ekranından doğrudan MekSim'e — splash düğmeleri alt alta/yan yana */
+  .intro-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .intro-btn-alt {
+    text-decoration: none; display: inline-block; background: rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.22); box-shadow: none; font-size: 15px; padding: 15px 26px;
+  }
+  .intro-btn-alt:hover { background: rgba(255,255,255,.16); }
   .intro-site {
     display: inline-block; margin-top: 26px; color: #c4b5fd; text-decoration: none;
     font-size: 15px; font-weight: 700; letter-spacing: .3px; border-bottom: 1px dashed rgba(196,181,253,.5); padding-bottom: 2px;
@@ -564,7 +571,10 @@
       <span>🛗 Asansör</span>
       <span>🧩 Şema</span>
     </div>
-    <button class="intro-btn" onclick="enterApp()">Giriş Yap →</button>
+    <div class="intro-actions">
+      <button class="intro-btn" onclick="enterApp()">Giriş Yap →</button>
+      <a class="intro-btn intro-btn-alt" href="meksim/">🧩 MekSim — 3B Simülasyon</a>
+    </div>
     <a class="intro-site" href="https://gdntsrm.com" target="_blank" rel="noopener">🌐 gdntsrm.com</a>
   </div>
 </div>
