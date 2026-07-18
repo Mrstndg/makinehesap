@@ -146,6 +146,9 @@
     display: flex; align-items: center; gap: 8px; font-weight: 600;
   }
   .theme-btn:hover { border-color: var(--primary); }
+  /* Üst çubuktan MekSim'e geçiş — mobilde menü kapalıyken de görünür kalsın */
+  .topbar-meksim { text-decoration: none; background: var(--primary); color: #fff; border-color: var(--primary); }
+  .topbar-meksim:hover { filter: brightness(1.08); border-color: var(--primary); }
 
   /* ---------- Home ---------- */
   .hero {
@@ -593,6 +596,7 @@
       <div class="crumb">📍 <b id="crumb">Ana Sayfa</b></div>
       <div style="display:flex; gap:10px;">
         <button class="theme-btn menu-toggle" onclick="toggleMenu()">☰ Menü</button>
+        <a class="theme-btn topbar-meksim" href="meksim/" title="MekSim — 3B mekanik montaj ve simülasyon">🧩 <span class="tb-lbl">MekSim</span></a>
         <button class="theme-btn" id="installBtn" style="display:none; background:var(--primary); color:#fff; border-color:var(--primary);" onclick="installApp()">📲 Uygulamayı Yükle</button>
         <button class="theme-btn" onclick="window.print()" title="Yazdır / PDF olarak kaydet">🖨 PDF</button>
         <button class="theme-btn" onclick="toggleTheme()"><span id="themeIcon">☀️</span> <span id="themeTxt">Aydınlık</span></button>
